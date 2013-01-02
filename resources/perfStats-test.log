@@ -1,0 +1,23 @@
+Performance Statistics   2013-01-02 08:07:20 - 2013-01-02 08:07:30
+Tag                                                  Avg(ms)         Min         Max     Std Dev       Count
+createQueueMessage                                       1.3           0           3         1.3           4
+getNextMessage                                           4.7           1          12         5.2           3
+listInProgressMessages                                   1.3           1           2         0.5           3
+peek                                                     1.0           0           2         0.8           3
+
+Performance Statistics   2013-01-02 08:07:30 - 2013-01-02 08:07:40
+Tag                                                  Avg(ms)         Min         Max     Std Dev       Count
+createQueueMessage                                       1.9           0           3         1.0          16
+createTopicMessage                                       2.2           1           3         0.7          13
+filterTopicMessages                                      1.2           0           2         0.7           5
+getNextMessage                                           1.3           0           3         1.2           3
+listInProgressMessages                                   0.7           0           1         0.5           3
+listTopicMessages                                        0.8           0           2         0.7           6
+peek                                                     0.3           0           1         0.5           3
+viewMessage                                              0.6           0           1         0.5          10
+
+Performance Statistics   2013-01-02 08:07:40 - 2013-01-02 08:07:50
+Tag                                                  Avg(ms)         Min         Max     Std Dev       Count
+createTopicMessage                                       0.9           0           2         0.8           7
+filterTopicMessages                                      1.0           0           2         0.7           4
+

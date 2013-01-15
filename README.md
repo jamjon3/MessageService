@@ -8,7 +8,8 @@ I know. Why re-invent the wheel, right?  I think this adds some features that ot
 
 * RESTful API
 * Support for queues *and* topics.  Several of our use-cases require pub/sub topics, so that eliminated most of the simple queueing systems (Resque/Jesque, beanstalkd, etc)
-* Message persistence and durability.  Our secondary datacenter is about 50 miles away and our DR site is around 600 miles away, so network interruption is a distinct possibility.  
+* Message persistence and durability
+* Graceful handling of network issues.  Our secondary datacenter is about 50 miles away and our DR site is around 600 miles away, so network interruption is a distinct possibility.  
 * This is just one piece of a larger IdM effort, so I want to keep it as simple as possible.
 
 ## Features

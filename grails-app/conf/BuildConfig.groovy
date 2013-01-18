@@ -33,8 +33,7 @@ grails.project.dependency.resolution = {
         runtime ":resources:1.1.6"
         compile "commons-lang:commons-lang:2.5"
         
-        compile ":mongodb:1.0.0.GA"
-        compile ":mongodb-compound-index-attributes:1.1"
+        compile ":mongodb:1.1.0.GA"
 
         test ":code-coverage:1.2.5"
 

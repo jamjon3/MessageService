@@ -234,9 +234,9 @@ class QueueController {
     def peek = {
         def username = springSecurityService.authentication.name
 
-        def queueMessages = queueService.peek(username, params.name, params.count)
+        def queueMessages = queueService.peek(username, params.name, params.count as Integer)
         if(queueMessages instanceof List) {
-            def resultMap = [count:1,messages:[queueMessages]]
+            def resultMap = [count:queueMessages.size,messages:queueMessages]
             renderResponse resultMap
             return
         } else {
@@ -259,7 +259,7 @@ class QueueController {
 
         def queueMessages = queueService.listInProgressMessages(username, params.name)
         if(queueMessages instanceof List) {
-            def resultMap = [count:1,messages:[queueMessages]]
+            def resultMap = [count:queueMessages.size,messages:queueMessages]
             renderResponse resultMap
             return
         } else {

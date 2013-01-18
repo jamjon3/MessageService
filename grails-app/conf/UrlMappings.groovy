@@ -2,7 +2,7 @@ class UrlMappings {
 
 	static mappings = {
         "/$auth/queue"(controller:"queue",parseRequest: true){ 
-            action = [GET:"listQueues", PUT:"requestError", DELETE:"requestError", POST:"addQueue"] 
+            action = [GET:"listQueues", PUT:"requestError", DELETE:"requestError", POST:"createQueue"] 
         } 
         "/$auth/queue/$name"(controller:"queue",parseRequest: true){ 
             action = [GET:"getNextMessage", PUT:"modifyQueue", DELETE:"deleteQueue", POST:"createQueueMessage"] 

@@ -196,7 +196,7 @@ grails.plugins.springsecurity.basic.realmName = "Message Service REST API"
 grails.plugins.springsecurity.filterChain.chainMap = [
   '/basic/**': 'JOINED_FILTERS,-casAuthenticationFilter,-exceptionTranslationFilter',
   '/cas/**': 'JOINED_FILTERS,-basicAuthenticationFilter,-basicExceptionTranslationFilter',
-  '/**': 'JOINED_FILTERS,-basicAuthenticationFilter,-basicExceptionTranslationFilter'
+  '/stats/**': 'JOINED_FILTERS,-basicAuthenticationFilter,-basicExceptionTranslationFilter'
 ]
 
 grails.plugins.springsecurity.controllerAnnotations.staticRules = [ '/**': ['ROLE_ITPRSUPERVISOR'] ]

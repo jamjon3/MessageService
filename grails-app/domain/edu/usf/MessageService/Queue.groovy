@@ -20,7 +20,7 @@ class Queue {
     
     static mapping = {}
 
-        def canRead(username){
+    def canRead(username){
         permissions.canRead.contains(username)
     }
 
@@ -45,31 +45,31 @@ class Queue {
     }
 
     def addReader(username){
-        permissions.canRead.add(username)
+        if (! canRead(username)) permissions.canRead.add(username)
     }
 
     def addWriter(username){
-        permissions.canWrite.add(username)
+        if (! canWrite(username)) permissions.canWrite.add(username)
     }
 
     def addAdmin(username){
-        permissions.canAdmin.add(username)
+        if (! canAdmin(username)) permissions.canAdmin.add(username)
     }
 
     def removeReader(username){
-        if(username != 'it-msgsrvadm'){
+        if((username != 'it-msgsrvadm')&&(canRead(username))){
             permissions.canRead.remove(username)
         } 
     }
 
     def removeWriter(username){
-        if(username != 'it-msgsrvadm'){
+        if((username != 'it-msgsrvadm')&&(canWrite(username))){
             permissions.canWrite.remove(username)
         }
     }
 
     def removeAdmin(username){
-        if(username != 'it-msgsrvadm'){
+        if((username != 'it-msgsrvadm')&&(canAdmin(username))){
             permissions.canAdmin.remove(username)
         }
     }

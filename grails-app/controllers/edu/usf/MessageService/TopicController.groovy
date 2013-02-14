@@ -234,8 +234,8 @@ class TopicController {
         def startTime = null
         def endTime = null
         try {
-            startTime = (params.startTime)?(new Date().parse("yyyy-MM-dd'T'HH:mm:ss", params.startTime)):null
-            endTime = (params.endTime)?(new Date().parse("yyyy-MM-dd'T'HH:mm:ss", params.endTime)):null
+            startTime = (params.startTime)?(new Date().parse("yyyy-MM-dd'T'HH:mm:ssz", "${params.startTime}GMT")):null
+            endTime = (params.endTime)?(new Date().parse("yyyy-MM-dd'T'HH:mm:ssZ", "${params.endTime}GMT")):null
         } catch (java.text.ParseException e) {
             renderError(400, "${e.message} Dates must be in the format yyyy-MM-dd\'T\'HH:mm:ss (GMT)")
             return

@@ -64,21 +64,22 @@ class StatsController {
         }
     }
 
-    @Secured(['ROLE_ITPRSUPERVISOR'])
+    @Secured(['ROLE_ITMESSAGESERVICEADMIN'])
     def listStats = {
         renderResponse statsService.listStats(params.tagFilter)        
     }
 
-    @Secured(['ROLE_ITPRSUPERVISOR'])
+    @Secured(['ROLE_ITMESSAGESERVICEADMIN'])
     def listAllQueueMessages = {
         renderResponse statsService.listAllQueueMessages(params.queueName,params.status)
     }
 
-    @Secured(['ROLE_ITPRSUPERVISOR'])
+    @Secured(['ROLE_ITMESSAGESERVICEADMIN'])
     def listAllTopicMessages = {
         renderResponse statsService.listAllTopicMessages(params.topicName)
     }
 
+    @Secured(['ROLE_ITMESSAGESERVICEADMIN'])
     def requestError = {
         renderError(405, "UnsupportedHttpVerb: ${request.method} not allowed")
     }

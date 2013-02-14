@@ -443,13 +443,10 @@ class QueueController {
 
     }
     
+    @Secured(['ROLE_ITMESSAGESERVICEUSER'])
     def requestError = {
         renderError(405, "UnsupportedHttpVerb: ${request.method} not allowed")
         return
     }
-
-    //force an error page
-    @Secured(['ROLE_DOES_NOT_EXIST'])
-    def showRoleError = {}
     
 }

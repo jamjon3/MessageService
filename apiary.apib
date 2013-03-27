@@ -57,7 +57,7 @@ GET /MessageService/basic/topic?pattern=^(netid).*
 
 Create a new topic
 #####JSON Parameters#####
-* `name` - Topic to create
+* `name` - Topic to create **Allowed characters: alphanumeric(a-z, A-Z, 0-9) and dash (-)**
 * `permissions.canRead` - List of users who can read messages in this topic
 * `permissions.canWrite` - List of users who can write messages to this topic
 * `permissions.canAdmin` - List of users who can delete, rename or change the permissions for this topic
@@ -65,7 +65,7 @@ Create a new topic
 **Note: The user creating the topic and the super admin (it-msgsvcadm) are automatically added to all permission lists**
 POST /MessageService/basic/topic
 > Content-Type: application/json
-{ "messageData": { "name": "MyNewTopic", "permissions": { "canRead": ["user1","user2"], "canWrite":["user2"], "canAdmin":["user1"]}}
+{ "apiVersion" : "1", "messageData": { "name": "MyNewTopic", "permissions": { "canRead": ["user1","user2"], "canWrite":["user2"], "canAdmin":["user1"]}}
 < 200
 < Content-Type: application/json
 { "count":1,
@@ -77,8 +77,10 @@ Change the name of a topic
 * `name` - New topic name
 PUT /MessageService/basic/topic/TestTopic1
 > Content-Type: application/json
-{ "messageData": { 
+{ "apiVersion" : "1",
+  "messageData": { 
     "name": "NewNameForTopic1"
+  }
 }
 < 200
 < Content-Type: application/json
@@ -97,7 +99,8 @@ Like the creation of a topic, three types of permissions can be set:
 Each permission contains two lists: `add` and `remove`, which contain the usernames to add or remove from the permission list 
 PUT /MessageService/basic/topic/MyNewTopic
 > Content-Type: application/json
-{ "messageData":{ 
+{ "apiVersion" : "1",
+  "messageData":{ 
     "permissions": {
         "canRead": {
             "add": ["user3","user4"], 
@@ -324,7 +327,7 @@ GET /MessageService/basic/queue?pattern=^(Account).*
 
 Create a new queue
 #####JSON Parameters#####
-* `name` - Queue to create
+* `name` - Queue to create **Allowed characters: alphanumeric(a-z, A-Z, 0-9) and dash (-)**
 * `permissions.canRead` - List of users who can read messages in this queue
 * `permissions.canWrite` - List of users who can write messages to this queue
 * `permissions.canAdmin` - List of users who can delete, rename or change the permissions for this queue
@@ -695,3 +698,77 @@ DELETE /MessageService/basic/queue/AccountChanges/50febc71e4b009d677459193
     }
   ]
 }
+
+
+--
+Error Handling
+Common error messages produced by MessageService
+--
+Duplicate name when creating a topic or queue
+POST /MessageService/basic/topic/MyTopic
+{ "apiVersion" : "1",
+  "messageData": { 
+    "name": "NewNameForTopic1"
+  }
+}
+< 400
+< Content-Type: application/json
+{ "error": "Create failed: ThisTopicAlreadyExists already exists!" }
+
+Invalid character in name when creating a topic or queue
+POST /MessageService/basic/topic
+{ "apiVersion" : "1",
+  "messageData": { 
+    "name": "Bad_Topic"
+  }
+}
+< 400
+< Content-Type: application/json
+{ "error": "Create failed: Bad_Topic invalid name!" }
+
+Topic/queue not found when trying to update it
+PUT /MessageService/basic/topic/ThisTopicDoesNotExist
+{ "apiVersion" : "1",
+  "messageData": { 
+    "name": "NewName"
+  }
+}
+< 404
+< Content-Type: application/json
+{"error":"Update failed: ThisTopicDoesNotExist does not exist"}
+
+User is not authorized to update this topic/queue
+PUT /MessageService/basic/queue/SomeQueue
+{ "apiVersion" : "1",
+  "messageData": { 
+    "name": "NewQueueName"
+  }
+}
+< 403
+< Content-Type: application/json
+{"error":"You are not authorized to perform this operation"}
+
+Invalid startTime and/or endTime parameter in topic filter
+GET /MessageService/basic/topic/TestTopic3/filter?startTime=2012-07-01
+< 200
+< Content-Type: application/json
+{"error":"Unparseable date: \"2012-07-01\" Dates must be in the format yyyy-MM-dd\'T\'HH:mm:ss (GMT)"}
+
+Missing `MessageData` when creating a new message in a topic or queue
+POST /MessageService/basic/queue/SomeQueue
+{ "apiVersion" : "1", "data" : "foo"
+}
+< 400
+< Content-Type: application/json
+{ "error":"Message data required" }
+
+Invalid JSON data when creating a new message in a topic or queue
+POST /MessageService/basic/queue/SomeQueue
+{ "apiVersion" : "1",
+  "messageData": { 
+    "data": 
+  }
+}
+< 400
+< Content-Type: application/json
+{ "error":"Message data is invalid" }

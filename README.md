@@ -13,10 +13,8 @@ I know. Why re-invent the wheel, right?  I think this adds some features that ot
 * This is just one piece of a larger IdM effort, so I want to keep it as simple as possible.
 
 ## Features
-* Simple REST API
+* Simple REST API - Documentation is available on [Apiary] (http://docs.usfit.apiary.io/)
 * Supports both Topics and Queues
 * Supports CAS and HTTP-BASIC authentication
 * MongoDB-based message persistence
 
-API documentation is available on [Apiary] (http://docs.usfit.apiary.io/)
- 

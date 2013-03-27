@@ -18,4 +18,5 @@ I know. Why re-invent the wheel, right?  I think this adds some features that ot
 * Supports CAS and HTTP-BASIC authentication
 * MongoDB-based message persistence
 
+API documentation is available on [Apiary] (http://docs.usfit.apiary.io/)
  

@@ -18,7 +18,6 @@ class Message {
     static constraints = {
         status(inList:['in-progress','pending','completed','error','n/a'],blank:false,nullable:false)
         createProg(blank:false,nullable:false)
-        createTime(blank:false,nullable:false)
     }
 
     static mapping = {

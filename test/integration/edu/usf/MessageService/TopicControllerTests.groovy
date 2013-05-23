@@ -474,7 +474,7 @@ class TopicControllerTests extends GroovyTestCase {
  
         controller.filterTopicMessages()
         //the JSON data contains escaped double quotes, so we have to escape the escape characters
-        def dateErrorMessage = '{"error":"Unparseable date: \\\"2012-07-01\\\" Dates must be in the format yyyy-MM-dd\'T\'HH:mm:ss (GMT)"}'
+        def dateErrorMessage = '{"error":"Unparseable date. Dates must be in the format yyyy-MM-dd\'T\'HH:mm:ss (GMT)"}'
         assert controller.response.contentAsString == dateErrorMessage
     }
     

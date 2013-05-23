@@ -720,13 +720,61 @@ class QueueControllerTests extends GroovyTestCase {
 
         controller.params.id = message.id as String
         controller.params.name = "TestQueue6"
-        controller.params.message = '{"createProg":"controllerTestChanged","messageData":{"name":"messageChanged"}}'
+        controller.params.message = '{"status":"in-progress"}'
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
         
         controller.modifyMessage()
         assert controller.response.status == 200
-        assert controller.response.contentAsString =~ /.*${message.id as String}.*controllerTestChanged.*messageChanged.*/         
+        assert controller.response.contentAsString =~ /.*messageDetails.*TestQueue6.*in-progress.*/    
+    }
+
+ @Test
+    void testModifyMessageMissingStatus() {
+        def queue = new Queue([name: "TestQueue6"])
+        queue.save(flush:true)
+
+        def message = new Message([creator: "it-msgsvcadm", apiVersion: 1,createProg: "QueueServiceTests",messageData:[data: "message"],messageContainer:new MessageContainer([type:"queue",id:queue.id,name:queue.name])])
+        message.save(flush:true)
+
+        def controller = new QueueController()
+        controller.queueService = queueService
+        controller.springSecurityService = stubSpringSecurityService
+        controller.springSecurityService.setUser("it-msgsvcadm")
+
+        controller.params.id = message.id as String
+        controller.params.name = "TestQueue6"
+        controller.params.message = '{"createProg":"controllerTestChanged","messageData":{"name":"messageChanged"}}'
+        controller.request.contentType = "text/json"
+        controller.request.addHeader("Accept", "text/json")
+        
+        controller.modifyMessage()
+        assert controller.response.status == 400
+        assert controller.response.contentAsString == '{"error":"Message status is a required parameter"}'         
+    }
+
+ @Test
+    void testModifyMessageStatusOnly() {
+        def queue = new Queue([name: "TestQueue6"])
+        queue.save(flush:true)
+
+        def message = new Message([creator: "it-msgsvcadm", apiVersion: 1,createProg: "QueueServiceTests",messageData:[data: "message"],messageContainer:new MessageContainer([type:"queue",id:queue.id,name:queue.name])])
+        message.save(flush:true)
+
+        def controller = new QueueController()
+        controller.queueService = queueService
+        controller.springSecurityService = stubSpringSecurityService
+        controller.springSecurityService.setUser("it-msgsvcadm")
+
+        controller.params.id = message.id as String
+        controller.params.name = "TestQueue6"
+        controller.params.message = '{"createProg":"controllerTestChanged","status":"in-progress","messageData":{"name":"messageChanged"}}'
+        controller.request.contentType = "text/json"
+        controller.request.addHeader("Accept", "text/json")
+        
+        controller.modifyMessage()
+        assert controller.response.status == 400
+        assert controller.response.contentAsString == '{"error":"Message status is the only modifiable data in a message"}'         
     }
 
   @Test
@@ -738,7 +786,7 @@ class QueueControllerTests extends GroovyTestCase {
 
         controller.params.id = "50ce774003641900865a1d0e" //This ID does not exist
         controller.params.name = "TestQueue1"
-        controller.request.content = '{"createProg":"controllerTestChanged","messageData":{"name":"messageChanged"}}'
+        controller.request.content = '{"status":"in-progress"}'
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
         
@@ -785,7 +833,7 @@ class QueueControllerTests extends GroovyTestCase {
         controller.springSecurityService.setUser("it-msgsvcadm")
 
         controller.params.name = "TestQueue6"
-        controller.request.content = '{"createProg":"controllerTestChanged","messageData":{"name""messageChanged"}}'
+        controller.request.content = '{"status""in-progress"}'
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
         
@@ -833,7 +881,7 @@ class QueueControllerTests extends GroovyTestCase {
 
         controller.params.id = message.id as String
         controller.params.name = "TestQueue1"
-        controller.request.content = '{"createProg":"testProg","messageData":{"netid":"epierce"}}'
+        controller.request.content = '{"status":"in-progress"}'
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
         

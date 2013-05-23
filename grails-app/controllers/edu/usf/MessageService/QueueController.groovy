@@ -364,13 +364,14 @@ class QueueController {
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
     def modifyMessage = {
         def username = springSecurityService.authentication.name
+        def ipAddress = request.getRemoteAddr()
         if (params.id){
             def message = getMessageBody()
             if(! message) {
                 renderError(400, 'MissingRequiredQueryParameter: Message data required')
                 return
             }
-            def queueMessage = queueService.modifyMessage(username, params.name, params.id, message)
+            def queueMessage = queueService.modifyMessage(username, params.name, params.id, message, ipAddress)
             if(queueMessage instanceof Map) {
                 renderResponse([count:1,messages:queueMessage])
                 return                          
@@ -390,6 +391,18 @@ class QueueController {
                     break
                     case "NotAuthorized":
                         renderError(403, "You are not authorized to perform this operation")
+                        return    
+                    break
+                    case "BadMessageStatus":
+                        renderError(400, "${message.status} is not a valid message status")
+                        return    
+                    break
+                    case "MessageStatusOnly":
+                        renderError(400, "Message status is the only modifiable data in a message")
+                        return    
+                    break
+                    case "MessageStatusRequired":
+                        renderError(400, "Message status is a required parameter")
                         return    
                     break
                     default:

@@ -1,6 +1,8 @@
 package edu.usf.MessageService
 
 import com.mongodb.DBCursor
+import org.bson.types.ObjectId
+
 import grails.converters.*
 import java.util.regex.Matcher
 import java.util.regex.Pattern
@@ -203,14 +205,15 @@ class QueueService {
             //Check authN
             if (! queue.canRead(username)) return "NotAuthorized"
 
-            def result = Message.findAllByMessageContainerAndStatus(new MessageContainer([name:queue.name,type:"queue",id:queue.id]),"pending",[max:1, sort:"createTime", order:"asc"])
-            if (result.size == 1) {
-                def queueMessage = result[0]
-                log.debug("User ${username} picked up message ${queueMessage.id as String} from queue ${queueName}")
-            
-                queueMessage.status = "in-progress"
-                queueMessage["taken"] = [date: new Date(), user: username, ipAddress: ipAddress]           
-                if( queueMessage.save() ) return queueMessage.render()
+            def taken = [date: new Date(), user: username, ipAddress: ipAddress]
+
+            //Search for the oldest message in the 'pending' status and change it to 'in-progress'
+            def result = Message.collection.findAndModify([ "messageContainer.id" : queue.id, status : "pending"], [$sort: [createTime: -1]], [$set: [status: "in-progress", taken: taken]]) as Message
+            if (result?.id) {
+                result.status = "in-progress"
+                result.taken = taken
+                log.debug("User ${username} picked up message ${result.id} from queue ${queueName}")
+                return result.render()
             } else {
                 return "NoResults"
             } 
@@ -271,7 +274,7 @@ class QueueService {
             def queueMessage = new Message(creator: username, status: "pending", apiVersion: message.apiVersion, createProg: message.createProg, messageData: message.messageData as LinkedHashMap)
             queueMessage.messageContainer = [type: "queue", id: queue.id, name: queue.name]
        
-            if(queueMessage.save()){
+            if(queueMessage.save(flush:true)){
                 log.info("Added new message ${queueMessage.id as String} to queue ${queueName} for ${username}")
                 return queueMessage.render()
             }  else {
@@ -321,16 +324,21 @@ class QueueService {
     }
 
     /**
-    * Thinking we should limit updates to status changes.  Any other change requires a new message to be created
+    * Limit updates to status changes.  Any other change requires a new message to be created
     **/
-    def modifyMessage(String username, String queueName, String messageId, Map messageUpdate) {
+    def modifyMessage(String username, String queueName, String messageId, Map messageUpdate, String ipAddress = "0.0.0.0") {
         def queue = Queue.findByName(queueName)
         if (queue) {
             
             //Check authN
             if (! queue.canWrite(username)) return "NotAuthorized"     
 
-            def queueMessage = Message.findById(messageId)
+            if (! messageUpdate.status) {
+              return "MessageStatusRequired"
+            } else if (messageUpdate.messageData){
+              return "MessageStatusOnly"
+            }
+            def queueMessage = Message.collection.findOne([ _id : new ObjectId(messageId)]) as Message
             if (!queueMessage) {
                 log.error("MessageID ( ${messageId} ) not found")
                 return "MessageNotFound"
@@ -341,22 +349,30 @@ class QueueService {
                 return "WrongQueueName"
             }
 
-            messageUpdate.each { key,value ->
-                if(key != 'id') {
-                    if(key == 'messageData') {         
-                        queueMessage.messageData = messageUpdate.messageData
-                    } else if(!key.startsWith('messageData.')){
-                        queueMessage[key] = value                                
-                    }
-                }
+            //Make sure the status passed is valid
+            queueMessage.status = messageUpdate.status 
+            if (! queueMessage.validate()){
+              if(queueMessage.errors.hasFieldErrors("status")) {
+                log.error("Update failed: ${messageUpdate.status} is not valid")
+                return "BadMessageStatus"
+              }
+              log.error("Update failed: validation errors")
+              return "ValidationError"
             }
-            
-            if(!queueMessage.save()) {
+
+            def updated = [date: new Date(), user: username, ipAddress: ipAddress]
+
+            //Update the message and add the 'updated' data
+            def result = Message.collection.update([ _id : new ObjectId(messageId)],[$set: [status: messageUpdate.status, updated: updated] ])
+
+            if (result) {
+              log.info("Updated ${messageId} to status ${messageUpdate.status}")
+              //redo the search and return the updated object
+              queueMessage = Message.collection.findOne([ _id : new ObjectId(messageId)]) as Message
+              return queueMessage.render()
+            } else {
                 log.error("Message ${messageId} update failed")
                 return "SaveFailed"
-            } else {
-                log.info("Message ${messageId} updated")
-                return queueMessage.render()
             }                                       
         } else { 
             log.warn("Invalid queue ( ${queueName} ) was given")
@@ -384,7 +400,7 @@ class QueueService {
 
             def queueMessageHash = queueMessage.render()
 
-            queueMessage.delete()
+            queueMessage.delete(flush: true)
             log.warn("Message ${messageId} deleted")
             return queueMessageHash    
         } else {

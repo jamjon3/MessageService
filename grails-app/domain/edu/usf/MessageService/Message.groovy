@@ -37,6 +37,7 @@ class Message {
                     if (messageContainer.isQueue()) {
                         text.status = status
                         if (this["taken"]) text.messageDetails.taken = this["taken"]
+                        if (this["updated"]) text.messageDetails.updated = this["updated"]
                     }
                     
         return text

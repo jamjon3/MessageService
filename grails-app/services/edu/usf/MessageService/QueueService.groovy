@@ -208,7 +208,7 @@ class QueueService {
             def taken = [date: new Date(), user: username, ipAddress: ipAddress]
 
             //Search for the oldest message in the 'pending' status and change it to 'in-progress'
-            def result = Message.collection.findAndModify([ "messageContainer.id" : queue.id, status : "pending"], [$sort: [createTime: -1]], [$set: [status: "in-progress", taken: taken]]) as Message
+            def result = Message.collection.findAndModify([ "messageContainer.id" : queue.id, status : "pending"], [$sort: [createTime: 1]], [$set: [status: "in-progress", taken: taken]]) as Message
             if (result?.id) {
                 result.status = "in-progress"
                 result.taken = taken

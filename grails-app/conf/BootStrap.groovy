@@ -1,5 +1,5 @@
-import edu.usf.MessageService.Topic
-import edu.usf.MessageService.Queue
+import edu.usf.cims.MessageService.Topic
+import edu.usf.cims.MessageService.Queue
 import grails.util.GrailsNameUtils
 import grails.util.GrailsUtil
 

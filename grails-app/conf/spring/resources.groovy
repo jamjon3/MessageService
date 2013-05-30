@@ -1,5 +1,5 @@
-import edu.usf.MessageService.LdapUserDetailsContextMapper
-import edu.usf.MessageService.MessageContainerType
+import edu.usf.cims.MessageService.LdapUserDetailsContextMapper
+import edu.usf.cims.MessageService.MessageContainerType
 
 
 beans = {

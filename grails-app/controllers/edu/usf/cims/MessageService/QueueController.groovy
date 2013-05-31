@@ -1,12 +1,7 @@
 package edu.usf.cims.MessageService
 
 import grails.converters.*
-
-import edu.usf.cims.MessageService.QueueService
-import edu.usf.cims.MessageService.AuditService
-
 import grails.plugins.springsecurity.Secured
-
 import groovy.time.TimeCategory
 
 class QueueController {

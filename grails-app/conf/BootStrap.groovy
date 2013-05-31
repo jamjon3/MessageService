@@ -10,23 +10,20 @@ class BootStrap {
             case "development":
                 println "#### Development Mode (Start Up)"
                 println "#### Building some test topics"
+
+                def username = 'it-msgsvcadm'
+                def queue = new Queue([name: "TestQueue"])
+                queue.addReader(username)
+                queue.addWriter(username)
+                queue.addAdmin(username)
+                queue.save(flush:true) 
+                
                 println "#### Building some test queues"
-                [
-                    [name: "TestTopic1"] as Topic,
-                    [name: "TestTopic2"] as Topic,
-                    [name: "TestTopic3"] as Topic,
-                    [name: "TestQueue1"] as Queue,
-                    [name: "TestQueue2"] as Queue,
-                    [name: "TestQueue3"] as Queue
-                ].each { domObj ->
-                    if(!domObj.save(flush: true, insert: true, validate: true)) {
-                        domObj.errors.allErrors.each {
-                            println it
-                        }                
-                    } else {
-                        println "Created new ${GrailsNameUtils.getShortName(domObj.class)} ${domObj.name}"                
-                    }                    
-                }
+                def topic = new Topic([name: "TestTopic"])
+                topic.addReader(username)
+                topic.addWriter(username)
+                topic.addAdmin(username)
+                topic.save(flush:true) 
                 break
             case "test":
                 println "#### Test Mode (Start Up)"

@@ -246,9 +246,9 @@ class QueueController {
                                             action: 'VIEW_MESSAGE', 
                                             containerName: params.name, 
                                             containerType: 'QUEUE', 
-                                            details:[ messageId: queueMessage.messageId,
+                                            details:[ messageId: queueMessage.id,
                                                       messageSize: resultMap.toString().length(), 
-                                                      messageAge: TimeCategory.minus( new Date(), queueMessage.createTime ) ]
+                                                      messageAge: new Date().getTime() - queueMessage.createTime.getTime() ]
                                                     ])
 
             renderResponse resultMap
@@ -369,7 +369,7 @@ class QueueController {
                                       action: 'CREATE_MESSAGE', 
                                       containerName: params.name, 
                                       containerType: 'QUEUE', 
-                                      details:[ messageId: queueMessages.messageId,
+                                      details:[ messageId: queueMessages.id,
                                                 messageSize: queueMessages.toString().length() ]
                                       ])
 
@@ -427,9 +427,9 @@ class QueueController {
                                           action: 'VIEW_MESSAGE', 
                                           containerName: params.name, 
                                           containerType: 'QUEUE', 
-                                          details:[ messageId: queueMessage.messageId,
+                                          details:[ messageId: queueMessage.id,
                                                     messageSize: queueMessage.toString().length(),
-                                                    messageAge: TimeCategory.minus( new Date(), queueMessage.createTime) ]
+                                                    messageAge: new Date().getTime() - queueMessage.createTime.getTime() ]
                                       ])
             renderResponse([count:1,messages:queueMessage])
             return                          
@@ -488,7 +488,7 @@ class QueueController {
                                           action: 'MODIFY_MESSAGE_STATUS', 
                                           containerName: params.name, 
                                           containerType: 'QUEUE', 
-                                          details:[ messageId: queueMessage.messageId ]
+                                          details:[ messageId: queueMessage.id ]
                                       ])              
             renderResponse([count:1,messages:queueMessage])
             return                          

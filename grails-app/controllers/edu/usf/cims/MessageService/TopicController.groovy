@@ -1,11 +1,12 @@
 package edu.usf.cims.MessageService
 
 import grails.converters.*
-import edu.usf.cims.MessageService.TopicService
 import grails.plugins.springsecurity.Secured
+import groovy.time.TimeCategory
 
 class TopicController {
     def topicService  
+    def auditService
     def springSecurityService
 
     private def getMessageBody() {
@@ -72,57 +73,71 @@ class TopicController {
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
     def listTopics = {
-        def topicResult = topicService.listTopics(params.pattern) 
-        if (topicResult instanceof List){
-            def resultMap = [count:topicResult.size,topics:topicResult]
-            renderResponse resultMap  
-            return 
-        } else {
-            switch(topic) {
-                default:
-                    renderError(400, "Request failed.")
-                    return
-                break
-            }
-        }
-
+      def username = springSecurityService.authentication.name
+      def ipAddress = request.getRemoteAddr()
+      def topicResult = topicService.listTopics(params.pattern) 
+      
+      if (topicResult instanceof List){
+          def resultMap = [count:topicResult.size,topics:topicResult]
+          auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'LIST_TOPICS'])
+          renderResponse resultMap  
+          return 
+      } else {
+          switch(topicResult) {
+              default:
+                  renderError(400, "Request failed.")
+                  return
+              break
+          }
+      }
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
     def createTopic = { 
         def username = springSecurityService.authentication.name
+        def ipAddress = request.getRemoteAddr()
         def message = getMessageBody()
 
         if (message){      
             def topic = topicService.addTopic(username, message)
             if(topic instanceof Map) {
-                renderResponse([count:1,topics:topic])
+                auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'CREATE_TOPIC', containerName: message.messageData.name, containerType: 'TOPIC'])
+                renderResponse([count:1, topics:topic])
                 return
             } else {
-                switch(topic) {
-                    case "unique":
-                        renderError(400, "Create failed: ${message.messageData.name} already exists!") 
-                        return   
+              def reason = [:]
+              switch(topic) {
+                  case "unique":
+                    reason.code = 400
+                    reason.message = "Create failed: ${message.messageData.name} already exists!"
                     break
-                    case "validator.invalid":
-                        renderError(400, "Create failed: ${message.messageData.name} invalid name!")
-                        return    
-                    break
-                    default:
-                        renderError(400, 'Topic could not be created')
-                        return
-                    break
-                }                
+                  case "validator.invalid":
+                    reason.code = 400
+                    reason.message = "Create failed: ${message.messageData.name} invalid name!"    
+                  break
+                  default:
+                    reason.code = 400
+                    reason.message = 'Topic could not be created'
+                  break
+              }
+              
+              auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'CREATE_TOPIC_ERROR', containerName: message.messageData.name, containerType: 'TOPIC', reason: reason.message])
+              renderError(reason.code, reason.message) 
+              return
             }
         } else {
-            renderError(400, 'Message data required')
-            return
+          def reason = 'Message data required'
+          auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'CREATE_TOPIC_ERROR', containerType: 'TOPIC', reason: reason])
+          renderError(400, reason)
+          return
         }
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
     def modifyTopic = {
         def username = springSecurityService.authentication.name
+        def ipAddress = request.getRemoteAddr()
+
         def message = getMessageBody()
         if(message?.messageData){
             def result = ""
@@ -137,305 +152,418 @@ class TopicController {
             if(result instanceof Map) {
                 if (result.canRead){
                     //This was a permissions modification
+                    auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'MODIFY_TOPIC_PERM', containerName: message.messageData.name, containerType: 'TOPIC'])
                     renderResponse result
                 } else {
+                    auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'MODIFY_TOPIC_NAME', containerName: message.messageData.name, containerType: 'TOPIC'])
                     renderResponse([count:1,topics:result])
                 }
                 return
             } else {
+              def reason = [:]
                 switch(result) {
                     case "unique":
-                        renderError(400, "Update failed: ${message.messageData.name} already exists!")
-                        return    
+                      reason.code = 400
+                      reason.message = "Update failed: ${message.messageData.name} already exists!"
                     break
                     case "validator.invalid":
-                        renderError(400, "Update failed: ${message.messageData.name} invalid name!")
-                        return    
+                      reason.code = 400
+                      reason.message = "Update failed: ${message.messageData.name} invalid name!"
                     break
                     case "TopicNotFound":
-                        renderError(404, "Update failed: ${params.name} does not exist")
-                        return    
+                      reason.code = 404
+                      reason.message = "Update failed: ${params.name} does not exist"
                     break
                     case "NoMessageData":
-                        renderError(400, "Message data required to modify topic!")
-                        return    
+                      reason.code = 400
+                      reason.message = "Message data required to modify topic!"
                     break
                     case "NotAuthorized":
-                        renderError(403, "You are not authorized to perform this operation")
-                        return    
+                      reason.code = 403
+                      reason.message = "You are not authorized to perform this operation"
                     break
                     default:
-                        renderError(400, 'Update failed: Topic could not be updated')
-                        return
+                      reason.code = 400
+                      reason.message = "Update failed: Queue could not be updated"
                     break
                 }
+                auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'MODIFY_TOPIC_ERROR', containerName: message.messageData.name, containerType: 'TOPIC', reason: reason.message])
+                renderError(reason.code, reason.message)
+                return
             }
         } else {
-            renderError(400, 'Message data required')
-            return
+          def reason = 'Message data required'
+          auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'MODIFY_TOPIC_ERROR', containerType: 'TOPIC', reason: reason])
+          renderError(400, reason)
+          return
         }
     }
 
-    @Secured(['ROLE_ITMESSAGESERVICEUSER'])
+    @Secured(['ROLE_ITMESSAGESERVICEUSER'])    
     def deleteTopic = {
-        def username = springSecurityService.authentication.name
-        def topic = topicService.deleteTopic(username, params.name)
-        if(topic instanceof Map) {
-            renderResponse([count:1,topics:topic])
-            return   
-        } else {
-            switch(topic) {
-                case "TopicNotFound":
-                    renderError(404, "ResourceNotFound: ${params.name} does not exist")
-                    return
-                break
-                case "NotAuthorized":
-                    renderError(403, "You are not authorized to perform this operation")
-                    return    
-                break
-                default:
-                    renderError(400, "Error: Could not delete ${params.name}.")
-                    return
-                break
-            }
-            
+      def username = springSecurityService.authentication.name
+      def ipAddress = request.getRemoteAddr()
+      def topic = topicService.deleteTopic(username, params.name)
+
+      if(topic instanceof Map) {
+        auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'DELETE_TOPIC', containerName: params.name, containerType: 'TOPIC'])
+        renderResponse([count:1,topics:topic])
+        return   
+      } else {
+        def reason = [:]
+        switch(topic) {
+            case "TopicNotFound":
+              reason.code = 404
+              reason.message = "ResourceNotFound: ${params.name} does not exist"
+            break
+            case "NotAuthorized":
+              reason.code = 403
+              reason.message = "You are not authorized to perform this operation"
+            break
+            default:
+              reason.code = 400
+              reason.message = "Error: Could not delete ${params.name}."
+            break
         }
+        auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'DELETE_TOPIC_ERROR', containerName: params.name, containerType: 'TOPIC', reason: reason.message])
+        renderError(reason.code, reason.message)
+        return
+          
+      }
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
     def listTopicMessages = {
         def username = springSecurityService.authentication.name
+        def ipAddress = request.getRemoteAddr()
+
         def topicMessages = topicService.listTopicMessages(username, params.name)
         if(topicMessages instanceof List) {
-            def resultMap = [count:topicMessages.size,messages:topicMessages]
+            def resultMap = [count:topicMessages.size, messages:topicMessages]
+            
+            auditService.writeAuditEntry([  actor: username, 
+                                            ipAddress: ipAddress, 
+                                            action: 'VIEW_MESSAGE', 
+                                            containerName: params.name, 
+                                            containerType: 'TOPIC', 
+                                            details:[ messageCount: topicMessages.size,
+                                                      messageSize: resultMap.toString().length() ]
+                                                    ])
+
             renderResponse resultMap
             return
         } else {
-            switch(topicMessages) {
-                case "TopicNotFound":
-                    renderError(404, "ResourceNotFound: ${params.name} does not exist")
-                    return
-                break
-                case "NotAuthorized":
-                    renderError(403, "You are not authorized to perform this operation")
-                    return    
-                break
-                default:
-                    renderResponse resultMap
-                    return
-                break
-            }
+          def reason = [:]
+          switch(topicMessages) {
+            case "NoResults":
+                auditService.writeAuditEntry([  actor: username, 
+                                                ipAddress: ipAddress, 
+                                                action: 'VIEW_MESSAGE', 
+                                                containerName: params.name, 
+                                                containerType: 'TOPIC' ])
+                renderResponse([count:0,messages:[]])
+                return
+            break
+            case "TopicNotFound":
+              reason.code = 404
+              reason.message = "ResourceNotFound: ${params.name} does not exist"
+            break
+            case "NotAuthorized":
+              reason.code = 403
+              reason.message = "You are not authorized to perform this operation"
+            break
+          }
+          auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'VIEW_ERROR', containerName: params.name, containerType: 'TOPIC', reason: reason.message])
+          renderError(reason.code, reason.message)
+          return
         }
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
     def filterTopicMessages = {
         def username = springSecurityService.authentication.name
+        def ipAddress = request.getRemoteAddr()
+
         def startTime = null
         def endTime = null
         try {
-            startTime = (params.startTime)?(new Date().parse("yyyy-MM-dd'T'HH:mm:ssz", "${params.startTime}GMT")):null
-            endTime = (params.endTime)?(new Date().parse("yyyy-MM-dd'T'HH:mm:ssZ", "${params.endTime}GMT")):null
+          startTime = (params.startTime)?(new Date().parse("yyyy-MM-dd'T'HH:mm:ss", params.startTime)):null
+          endTime = (params.endTime)?(new Date().parse("yyyy-MM-dd'T'HH:mm:ss", params.endTime)):null
         } catch (java.text.ParseException e) {
-            renderError(400, "Unparseable date. Dates must be in the format yyyy-MM-dd\'T\'HH:mm:ss (GMT)")
-            return
+          def reason = [code: 400, message: "Unparseable date. Dates must be in the format yyyy-MM-dd\'T\'HH:mm:ss (GMT)"]
+          renderError(reason.code, reason.message)
+          return
         }
 
         //Valid start time is required
         if(startTime){ 
             def topicMessages = topicService.filterTopicMessages(username, params.name,startTime,endTime)
             if(topicMessages instanceof List) {
-                def resultMap = [count:topicMessages.size,messages:topicMessages]
+                def resultMap = [count:topicMessages.size, messages:topicMessages]
+                auditService.writeAuditEntry([  actor: username, 
+                                                ipAddress: ipAddress, 
+                                                action: 'VIEW_MESSAGE', 
+                                                containerName: params.name, 
+                                                containerType: 'TOPIC', 
+                                                details:[ messageCount: topicMessages.size,
+                                                          messageSize: resultMap.toString().length() ]
+                                                      ])              
+                
                 log.debug("Listing ${topicMessages.size} messages from topic ${params.name}")
                 renderResponse resultMap    
                 return                      
             } else {
-                switch(topicMessages) {
-                    case "TopicNotFound":
-                        renderError(404, "ResourceNotFound: ${params.name} does not exist")
-                        return       
-                    break
-                    case "NotAuthorized":
-                        renderError(403, "You are not authorized to perform this operation")
-                        return    
-                    break
-                    default:
-                        renderError(400, 'Messages could not be found') 
-                        return       
-                    break
-                }
+              def reason = [:]
+              switch(topicMessages) {
+                case "NoResults":
+                    auditService.writeAuditEntry([  actor: username, 
+                                                    ipAddress: ipAddress, 
+                                                    action: 'VIEW_MESSAGE', 
+                                                    containerName: params.name, 
+                                                    containerType: 'TOPIC' ])
+                    renderResponse([count:0,messages:[]])
+                    return
+                break
+                case "TopicNotFound":
+                  reason.code = 404
+                  reason.message = "ResourceNotFound: ${params.name} does not exist"
+                break
+                case "NotAuthorized":
+                  reason.code = 403
+                  reason.message = "You are not authorized to perform this operation"
+                break
+              }
+              renderError(reason.code, reason.message)
+              return
             }
         } else {
-            renderError(400, 'MissingRequiredQueryParameter: startTime parameter not found')
+          def reason = [code: 400, message: 'MissingRequiredQueryParameter: startTime parameter not found' ]
+            renderError(reason.code, reason.message)
             return
         }
-    }  
+    } 
 
-    
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
     def createTopicMessage = {
-        def username = springSecurityService.authentication.name
-        def message = getMessageBody()
+      def username = springSecurityService.authentication.name
+      def ipAddress = request.getRemoteAddr()
+      def message = getMessageBody()
 
-        if (message) { 
-            if (! message.apiVersion) message.apiVersion = 1
-            def topicMessages = topicService.createTopicMessage(username, params.name,message)
-        
-            if(topicMessages instanceof Map) {
-                renderResponse([count:1,messages:topicMessages])
-                return                           
-            } else {
-                switch(topicMessages) {
-                    case "TopicNotFound":
-                        renderError(404, 'Topic does not exist') 
-                        return       
-                    break
-                    case "NotAuthorized":
-                        renderError(403, "You are not authorized to perform this operation")
-                        return    
-                    break
-                    case 'NoMessageData':
-                        renderError(400, 'Message data missing or bad format') 
-                        return       
-                    break
-                    case 'NoApiVersion':
-                        renderError(400, 'Message data missing API Version') 
-                        return       
-                    break
-                    case 'NoCreateProgram':
-                        renderError(400, 'Message data missing Create Program') 
-                        return       
-                    break
-                    default:
-                        renderError(400, 'Message could not be created') 
-                        return       
-                    break
-                }
-            }
-        }else {
-            renderError(400, 'Message data required')
-            return
+      if (message) { 
+        if (! message.apiVersion) message.apiVersion = 1
+        def topicMessages = topicService.createTopicMessage(username, params.name,message)
+    
+        if(topicMessages instanceof Map) {
+          auditService.writeAuditEntry([  actor: username, 
+                                      ipAddress: ipAddress, 
+                                      action: 'CREATE_MESSAGE', 
+                                      containerName: params.name, 
+                                      containerType: 'TOPIC', 
+                                      details:[ messageId: topicMessages.messageId,
+                                                messageSize: topicMessages.toString().length() ]
+                                      ])
+
+            renderResponse([count:1,messages:topicMessages])
+            return                           
+        } else {
+          def reason = [:]
+          switch(topicMessages) {
+            case "TopicNotFound":
+              reason.code = 404
+              reason.message = 'Topic does not exist'
+            break
+            case "NotAuthorized":
+              reason.code = 403
+              reason.message = 'You are not authorized to perform this operation'              
+            break
+            case 'NoMessageData':
+              reason.code = 400
+              reason.message = 'Message data missing or bad format'
+            break
+            case 'NoApiVersion':
+              reason.code = 400
+              reason.message = 'Message data missing API Version'
+            break
+            case 'NoCreateProgram':
+              reason.code = 400
+              reason.message = 'Message data missing Create Program'
+            break
+            default:
+              reason.code = 400
+              reason.message = 'Message could not be created'
+            break
+          }
+          auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'CREATE_MESSAGE_ERROR', containerName: params.name, containerType: 'TOPIC', reason: reason.message])
+          renderError(reason.code, reason.message)
+          return
         }
-
+      }else {
+        def reason = [code: 400, message: 'Message data required']
+        auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'CREATE_MESSAGE_ERROR', containerName: params.name, containerType: 'TOPIC', reason: reason.message])
+        renderError(reason.code, reason.message)
+        return
+      }
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
     def viewMessage = {
-        def username = springSecurityService.authentication.name
-        if (params.id){
-            def topicMessage = topicService.viewMessage(username, params.name, params.id)
-            if(topicMessage instanceof Map) {
-                renderResponse([count:1,messages:topicMessage])
-                return                          
-            } else {
-                switch(topicMessage) {
-                    case "TopicNotFound":
-                        renderError(404, 'Topic does not exist') 
-                        return       
-                    break
-                    case "MessageNotFound":
-                        renderError(404, 'Message does not exist') 
-                        return       
-                    break
-                    case "WrongTopicName":
-                        renderError(400, 'Requested message does not belong to requested topic') 
-                        return       
-                    break
-                    case "NotAuthorized":
-                        renderError(403, "You are not authorized to perform this operation")
-                        return    
-                    break
-                    default:
-                        renderError(400, 'Message could not be retreived') 
-                        return       
-                    break
-                }                  
-            }
+      def username = springSecurityService.authentication.name
+      def ipAddress = request.getRemoteAddr()
+      if (params.id){
+        def topicMessage = topicService.viewMessage(username, params.name, params.id)
+        if(topicMessage instanceof Map) {
+          auditService.writeAuditEntry([  actor: username, 
+                                          ipAddress: ipAddress, 
+                                          action: 'VIEW_MESSAGE', 
+                                          containerName: params.name, 
+                                          containerType: 'TOPIC', 
+                                          details:[ messageId: topicMessage.messageId,
+                                                    messageSize: topicMessage.toString().length(),
+                                                    messageAge: TimeCategory.minus( new Date(), topicMessage.createTime) ]
+                                      ])
+            renderResponse([count:1,messages:topicMessage])
+            return                          
         } else {
-            renderError(400, 'MissingRequiredQueryParameter: Message id required')
-            return
+          def reason = [:]
+          switch(topicMessage) {
+            case "TopicNotFound":
+              reason.code = 404
+              reason.message = 'Topic does not exist'
+            break
+            case "MessageNotFound":
+              reason.code = 404
+              reason.message = 'Message does not exist'
+            break
+            case "WrongTopicName":
+              reason.code = 400
+              reason.message = 'Requested message does not belong to requested topic'
+            break
+            case "NotAuthorized":
+              reason.code = 403
+              reason.message = 'You are not authorized to perform this operation'
+            break
+            default:
+              reason.code = 400
+              reason.message = 'Message could not be retreived'
+            break
+          }
+          auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'VIEW_ERROR', containerName: params.name, containerType: 'TOPIC', reason: reason.message, details:[ messageId: params.id]])
+          renderError(reason.code, reason.message)
+          return
         }
+      } else {
+        def reason = [code: 400, message: 'MissingRequiredQueryParameter: Message id required']
+          auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'VIEW_ERROR', containerName: params.name, containerType: 'TOPIC', reason: reason.message])
+          renderError(reason.code, reason.message)
+          return
+      }
     }
 
+/*
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
     def modifyMessage = {
-        def username = springSecurityService.authentication.name
-        if (params.id){
-            def message = getMessageBody()
-            if(! message) {
-                renderError(400, 'MissingRequiredQueryParameter: Message data required')
-                return
-            }
-            def topicMessage = topicService.modifyMessage(username, params.name, params.id, message)
-            if(topicMessage instanceof Map) {
-                renderResponse([count:1,messages:topicMessage])
-                return                          
-            } else {
-                switch(topicMessage) {
-                    case "TopicNotFound":
-                        renderError(404, 'Topic does not exist') 
-                        return       
-                    break
-                    case "MessageNotFound":
-                        renderError(404, 'Message does not exist') 
-                        return       
-                    break
-                    case "WrongTopicName":
-                        renderError(400, 'Requested message does not belong to requested topic') 
-                        return       
-                    break
-                    case "NotAuthorized":
-                        renderError(403, "You are not authorized to perform this operation")
-                        return    
-                    break
-                    default:
-                        renderError(400, 'Message could not be updated') 
-                        return       
-                    break
-                }                  
-            }
-        } else {
-            renderError(400, 'MissingRequiredQueryParameter: Message id required')
-            return
+      def username = springSecurityService.authentication.name
+      def ipAddress = request.getRemoteAddr()
+      if (params.id){
+        def message = getMessageBody()
+        if(! message) {
+          def reason = [code: 400, message: 'Message data required']
+          auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'MODIFY_MESSAGE_ERROR', containerName: params.name, containerType: 'TOPIC', reason: reason.message])
+          renderError(reason.code, reason.message)
+          return
         }
+        def topicMessage = topicService.modifyMessage(username, params.name, params.id, message, ipAddress)
+        if(topicMessage instanceof Map) {
+          auditService.writeAuditEntry([  actor: username, 
+                                          ipAddress: ipAddress, 
+                                          action: 'MODIFY_MESSAGE_STATUS', 
+                                          containerName: params.name, 
+                                          containerType: 'TOPIC', 
+                                          details:[ messageId: topicMessage.messageId ]
+                                      ])              
+            renderResponse([count:1,messages:topicMessage])
+            return                          
+        } else {
+          def reason = [:]
+          switch(topicMessage) {
+            case "TopicNotFound":
+              reason.code = 404
+              reason.message = 'Topic does not exist'
+            break
+            case "MessageNotFound":
+              reason.code = 404
+              reason.message = 'Message does not exist'
+            break
+            case "WrongTopicName":
+              reason.code = 400
+              reason.message = 'Requested message does not belong to requested topic'
+            break
+            case "NotAuthorized":
+              reason.code = 403
+              reason.message = 'You are not authorized to perform this operation'
+            break
+            default:
+              reason.code = 400
+              reason.message = 'Message could not be updated'
+            break
+          }
+          auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'MODIFY_MESSAGE_ERROR', containerName: params.name, containerType: 'TOPIC', reason: reason.message, details:[ messageId: params.id]])
+          renderError(reason.code, reason.message)
+          return
+        }
+      } else {
+        def reason = [code: 400, message: 'MissingRequiredQueryParameter: Message id required']
+        auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'MODIFY_MESSAGE_ERROR', containerName: params.name, containerType: 'TOPIC', reason: reason.message])
+        renderError(reason.code, reason.message)
+        return
+      }
     }
+*/
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
     def deleteMessage = {
-        def username = springSecurityService.authentication.name
-         if (params.id){
-            def topicMessage = topicService.deleteMessage(username,params.name,params.id)
-            if(topicMessage instanceof Map) {
-                renderResponse([count:1,messages:topicMessage])
-                return                          
-            } else {
-                switch(topicMessage) {
-                    case "TopicNotFound":
-                        renderError(404, 'Topic does not exist') 
-                        return       
-                    break
-                    case "MessageNotFound":
-                        renderError(404, 'Message does not exist') 
-                        return       
-                    break
-                    case "WrongTopicName":
-                        renderError(400, 'Requested message does not belong to requested topic') 
-                        return       
-                    break
-                    case "NotAuthorized":
-                        renderError(403, "You are not authorized to perform this operation")
-                        return    
-                    break
-                    default:
-                        renderError(400, 'Message could not be deleted') 
-                        return       
-                    break
-                }                  
-            }
+      def username = springSecurityService.authentication.name
+      def ipAddress = request.getRemoteAddr()
+      if (params.id){
+        def topicMessage = topicService.deleteMessage(username,params.name,params.id)
+        if(topicMessage instanceof Map) {
+          auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'DELETE_MESSAGE', containerName: params.name, containerType: 'TOPIC', details:[ messageId: params.id]])
+          renderResponse([count:1,messages:topicMessage])
+          return                          
         } else {
-            renderError(400, 'MissingRequiredQueryParameter: Message id required')
-            return
+          def reason = [:]
+          switch(topicMessage) {
+            case "TopicNotFound":
+              reason.code = 404
+              reason.message = 'Topic does not exist'
+            break
+            case "MessageNotFound":
+              reason.code = 404
+              reason.message = 'Message does not exist'
+            break
+            case "WrongTopicName":
+              reason.code = 400
+              reason.message = 'Requested message does not belong to requested topic'
+            break
+            case "NotAuthorized":
+              reason.code = 403
+              reason.message = "You are not authorized to perform this operation"
+            break
+            default:
+              reason.code = 400
+              reason.message = 'Message could not be deleted'
+            break
+          }
+          auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'DELETE_MESSAGE_ERROR', containerName: params.name, containerType: 'TOPIC', reason: reason.message, details:[ messageId: params.id]])
+          renderError(reason.code, reason.message)
+          return
         }
+    } else {
+        def reason = [code: 400, message: 'MissingRequiredQueryParameter: Message id required']
+        auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'DELETE_MESSAGE_ERROR', containerName: params.name, containerType: 'TOPIC', reason: reason.message])
+        renderError(reason.code, reason.message)
+        return
+      }
 
     }
     

@@ -279,9 +279,7 @@ class TopicService {
         }
     }
 
-    /**
-    * Thinking we should limit updates to status changes.  Any other change requires a new message to be created
-    **/
+/*
     def modifyMessage(String username, String topicName, String messageId, Map messageUpdate) {
         def topic = Topic.findByName(topicName)
         if (topic) {
@@ -322,6 +320,7 @@ class TopicService {
             return "TopicNotFound"
         } 
     }
+*/
 
     def deleteMessage(String username, String topicName, String messageId) {
         def topic = Topic.findByName(topicName)

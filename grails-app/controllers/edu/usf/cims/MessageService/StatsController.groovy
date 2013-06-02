@@ -65,21 +65,34 @@ class StatsController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def listStats = {
-       // render statsService.countQueueMessages(params.queue,params.status)  
-      //render statsService.getQueueCounts()
-      //render statsService.getOldestMessage(params.queue, params.status)
-      render statsService.getAverageMessageAge()
+    def index = {
+      def results = [:]
+      results.oldestMessageData = statsService.getOldestMessage()
+      results.newestMessageData = statsService.getNewestMessage()
+      renderResponse results
     }
 
-    @Secured(['ROLE_ITMESSAGESERVICEADMIN'])
-    def listAllQueueMessages = {
-        renderResponse statsService.listAllQueueMessages(params.queueName,params.status)
+    @Secured(['ROLE_ITMESSAGESERVICEUSER'])
+    def queueStats = {
+      def results = [:]
+      results.oldestMessageData = statsService.getOldestQueueMessage()
+      results.newestMessageData = statsService.getNewestQueueMessage()
+      renderResponse results
     }
 
-    @Secured(['ROLE_ITMESSAGESERVICEADMIN'])
-    def listAllTopicMessages = {
-        renderResponse statsService.listAllTopicMessages(params.topicName)
+    @Secured(['ROLE_ITMESSAGESERVICEUSER'])
+    def topicStats = {
+      def results = [:]
+      results.oldestMessageData = statsService.getOldestTopicMessage()
+      if (! results.oldestMessageData instanceof Map){
+        renderError 400 "Got error collecting data on the oldest topic message."
+      }
+      results.newestMessageData = statsService.getNewestTopicMessage()
+      if (! results.newestMessageData instanceof Map){
+        renderError 400 "Got error collecting data on the newest topic message."
+      }
+
+      renderResponse results
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEADMIN'])

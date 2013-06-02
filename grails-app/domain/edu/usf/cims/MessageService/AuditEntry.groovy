@@ -57,6 +57,7 @@ class AuditEntry {
     }
 
     static mapping = {
+        collection "audit"
         auditTime index:true
         actor index:true
         action index:true

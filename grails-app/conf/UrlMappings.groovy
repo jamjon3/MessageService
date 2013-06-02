@@ -15,7 +15,7 @@ class UrlMappings {
         } 
         "/$auth/queue/$name/peek"(controller:"queue",parseRequest: true){ 
             action = [GET:"peek", PUT:"requestError", DELETE:"requestError", POST:"requestError"] 
-        } 
+        }
 
         "/$auth/topic"(controller:"topic", parseRequest:true){ 
             action = [GET:"listTopics", PUT:"requestError", DELETE:"requestError", POST:"createTopic"] 
@@ -31,13 +31,19 @@ class UrlMappings {
         } 
 
         "/$auth/stats"(controller:"stats", parseRequest:true) {
-            action = [GET:"listStats", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
+            action = [GET:"index", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
         }
-        "/$auth/stats/queue/message"(controller:"stats", parseRequest:true) {
-            action = [GET:"listAllQueueMessages", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
+        "/$auth/stats/queue"(controller:"stats", parseRequest:true) {
+            action = [GET:"queueStats", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
         }
-        "/$auth/stats/topic/message"(controller:"stats", parseRequest:true) {
-            action = [GET:"listAllTopicMessages", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
+        "/$auth/stats/topic"(controller:"stats", parseRequest:true) {
+            action = [GET:"topicStats", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
+        }
+        "/$auth/stats/queue/$name"(controller:"stats", parseRequest:true) {
+            action = [GET:"detailedQueueStats", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
+        }
+        "/$auth/stats/topic/$name"(controller:"stats", parseRequest:true) {
+            action = [GET:"detailedTopicStats", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
         }
 
 		"/"(view:"/index",parseRequest: true)

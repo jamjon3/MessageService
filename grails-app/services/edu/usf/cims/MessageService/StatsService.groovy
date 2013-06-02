@@ -57,26 +57,131 @@ class StatsService {
         }        
     }
 
-    def getOldestMessage(container = null, status = null){
-      def result
-      if (status && container){
-        result = Message.collection.find([ "messageContainer.name" : container, status : status]).sort(createTime: 1).limit(1) as Message  
-      } else if (container){
-        result = Message.collection.find([ "messageContainer.name" : container]).sort(createTime: 1).limit(1) as Message
-      } else if (status){
-        result = Message.collection.find([ status : status]).sort(createTime: 1).limit(1) as Message
-      } else {
-        result = Message.collection.find().sort(createTime: 1).limit(1) as Message        
-      }
-      if (result){
-        def resultMap = [:]
-        resultMap.messageId = result.id
-        resultMap.createTime = result.createTime
-        resultMap.age = TimeCategory.minus( new Date(), result.createTime )
-
-        return resultMap
-      }
+    def getNewestQueueMessage(container = null, status = null){
+      return getMessageByAge('queue', container, status, -1)
     }
+
+    def getNewestTopicMessage(container = null){
+      return getMessageByAge('topic', container, null, -1)
+    }
+
+    def getOldestQueueMessage(container = null, status = null){
+      return getMessageByAge('queue', container, status, 1)
+    }
+
+    def getOldestTopicMessage(container = null){
+      return getMessageByAge('topic', container, null, 1)
+    }
+
+    def getOldestMessage(status = null){
+      return getMessageByAge(null, null, status, 1)
+    }
+
+    def getNewestMessage(status = null){
+      return getMessageByAge(null, null, status, -1)
+    }
+
+    private def getMessageByAge(String containerType, String containerName, String status, Integer sortType){
+      def searchParams = getSearchParams(containerType, containerName, status)
+
+      if(! searchParams instanceof Map) {
+        return "Error"
+      }
+
+      def result = Message.collection.find(searchParams).sort(createTime: sortType).limit(1) as Message
+
+      def resultMap = [:]
+      if (result){
+        resultMap.messageId = result.render().id
+        resultMap.messageDetails = result.render().messageDetails
+        resultMap.createTime = result.render().createTime
+        resultMap.age = TimeCategory.minus( new Date(), result.createTime ) as String
+      }
+      return resultMap
+    }
+
+    /**
+    * Returns a map that can be used as search parameters for a MongoDB query
+    **/
+    private def getSearchParams(containerType = null, containerName = null, status){
+      def searchParams
+      def messageContainer
+
+      if (containerName) {
+        if(containerType == 'topic') {
+          messageContainer = Topic.findByName(containerName)
+          if (!messageContainer) return 'ContainerNotFound'
+        } else if (containerType == 'queue'){
+          messageContainer = Queue.findByName(containerName)
+          if (!messageContainer) return 'ContainerNotFound'        
+        }
+      }
+
+      if (status && containerName && messageContainer){
+        searchParams = ["messageContainer.name": messageContainer.name, "messageContainer.type": containerType, status: status]
+      } else if (containerName && messageContainer){
+        searchParams = ["messageContainer.name": messageContainer.name, "messageContainer.type": containerType]
+      } else if (status && messageContainer){
+        searchParams = ["messageContainer.type": containerType, status: status]
+      } else if (containerName){
+        searchParams = ["messageContainer.type": containerType]
+      } else if (status){
+        searchParams = [status: status]
+      }
+
+      return searchParams
+    }
+
+    def getMessgesPerMinute(action){
+
+      Message.collection.aggregate(
+        [ $project : [  action: true, 
+                        date_time: [
+                          'y': ['$year': '$auditTime'],
+                          'm': ['$month': '$auditTime'],
+                          'd': ['$dayOfMonth': '$auditTime'],
+                          'h': ['$hour': '$auditTime'],
+                          'min': ['$minute': '$auditTime']
+                        ]
+                      ] 
+        ],
+        [ 
+          $group : [
+            '_id' : [
+                'a' : '$action',
+                'y' : '$date_time.y',
+                'm' : '$date_time.m',
+                'd' : '$date_time.d',
+                'h' : '$date_time.h',
+                'min' : '$date_time.min',
+//                'msgs': [$sum: 1]
+            ]
+          ] 
+        ]
+    )
+/*
+
+'p':'$path',
+... 'y': '$date.y',
+... 'm': '$date.m',
+... 'd': '$date.d' },
+... 'hits': { '$sum': 1 } } },
+      cond: { ord_dt: { $gt: new Date( '01/01/2012' ) } },
+
+      //def result = db.clicks.group([day: true], [:], [count: 0], "function(doc, out) { out.count += doc.total }")
+      def command = [ key: action,
+                      cond: [
+                          //action: "CREATE_MESSAGE"//[ 
+                            [$match : [action: "CREATE_MESSAGE"]]
+                        ], 
+                      initial: [count: 0], 
+                      $reduce: "function(doc, out) { out.count += 1 }"
+                    ]
+
+      Message.collection.group(command)
+      */
+    }
+
 
     def getAverageMessageAge(containerName = null, status = null){
       /* Define a Map-Reduce function to get the average age */

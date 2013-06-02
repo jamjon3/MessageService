@@ -25,7 +25,12 @@ class Message {
     def render() { 
         def text = [    id: id as String,
                         creator: creator,
-                        messageDetails: [ messageContainer: [type:messageContainer.type, id:messageContainer.id as String, name:messageContainer.name] ],
+                        messageDetails: [ 
+                          messageContainer: [
+                            type: messageContainer.type, 
+                            id: messageContainer.id as String, 
+                            name: messageContainer.name] 
+                        ],
                         apiVersion: apiVersion,
                         createTime: createTime,
                         createProg: createProg,

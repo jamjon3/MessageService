@@ -6,6 +6,7 @@ class Queue {
     ObjectId id
     String name
     Map permissions = [ canRead:['it-msgsvcadm'], canWrite:['it-msgsvcadm'], canAdmin:['it-msgsvcadm'] ]
+    Map stats = ['in-progress' : 0, 'pending' : 0 , 'error' : 0]
 
     static constraints = {
         name(   
@@ -75,9 +76,18 @@ class Queue {
     }
     
     def render() { 
-        return [
-            name: name
+        def count = 0
+        stats.each { key, value ->
+          count = count + value
+        }
+        def result = [
+            name: name,
+            stats: [
+              messages: count,
+              status: stats
+            ]
         ]
+        return result
     }
     
     public String toString() {

@@ -2,18 +2,17 @@ package edu.usf.cims.MessageService
 
 import com.mongodb.DBCursor
 import grails.converters.*
-import java.util.regex.Matcher
-import java.util.regex.Pattern
 
 class TopicService {
 
+/*
     static profiled = {
         createTopicMessage(tag: "createTopicMessage",message:"Created a new Topic Message")
         viewMessage(tag:"viewMessage",message:"Retrieved a Topic Message")
         listTopicMessages(tag:"listTopicMessages",message:"Retrieved a list of Topic Messages")
         filterTopicMessages(tag:"filterTopicMessages",message:"Retrieved a filtered list of Topic Messages")
     }
-
+*/
     static transactional = true
 
 
@@ -69,7 +68,6 @@ class TopicService {
         }        
     }
 
-/** TODO: Support more properties than just name **/
     def modifyTopic(String username, String topicName, Map message) {
         if(message.messageData.name) {
             def topic = Topic.findByName(topicName)
@@ -216,7 +214,6 @@ class TopicService {
 
             //Check authN
             if (! topic.canRead(username)) return "NotAuthorized"
-
             def messageContainer = new MessageContainer([name:topicName,type:"topic",id:topic.id])
             return (endTime) ? Message.findAllByMessageContainerAndCreateTimeBetween(messageContainer,startTime,endTime)*.render() : Message.findAllByMessageContainerAndCreateTimeGreaterThanEquals(messageContainer,startTime)*.render()
         } else {
@@ -241,7 +238,8 @@ class TopicService {
             def topicMessage = new Message(creator: username, apiVersion: message.apiVersion, createProg: message.createProg, messageData: message.messageData as LinkedHashMap)
             topicMessage.messageContainer = [type: "topic", id: topic.id, name: topic.name]
        
-            if(topicMessage.save()){
+            if(topicMessage.save(flush:true)){
+                Topic.collection.findAndModify(['_id': topic.id], [$inc:['messages': 1]])
                 log.info("Added new message ${topicMessage.id as String} to topic ${topicName} for ${username}")
                 return topicMessage.render()
             }  else {
@@ -331,6 +329,7 @@ class TopicService {
 
             def topicMessage = Message.findById(messageId)
             if (!topicMessage) {
+                Topic.collection.findAndModify(['_id': topic.id], [$inc:['messages': -1]])
                 log.error("MessageID ( ${messageId} ) not found")
                 return "MessageNotFound"
             }

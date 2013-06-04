@@ -4,18 +4,16 @@ import com.mongodb.DBCursor
 import org.bson.types.ObjectId
 
 import grails.converters.*
-import java.util.regex.Matcher
-import java.util.regex.Pattern
 
 class QueueService {
-
+/*
     static profiled = {
         createQueueMessage(tag: "createQueueMessage",message:"Created a new Queue Message")
         peek(tag:"peek",message:"Peeked at a Queue Message")
         getNextMessage(tag:"getNextMessage",message:"Retrieved a Queue Messages")
         listInProgressMessages(tag:"listInProgressMessages",message:"Retrieved a list of Queue Messages that are in progress")
     }
-
+*/
     static transactional = true
 
 
@@ -207,8 +205,13 @@ class QueueService {
             def taken = [date: new Date(), user: username, ipAddress: ipAddress]
 
             //Search for the oldest message in the 'pending' status and change it to 'in-progress'
-            def result = Message.collection.findAndModify([ "messageContainer.id" : queue.id, status : "pending"], [$sort: [createTime: 1]], [$set: [status: "in-progress", taken: taken]]) as Message
+            def result = Message.collection.findAndModify(  ["messageContainer.id" : queue.id, status : "pending"], 
+                                                            [$sort: [createTime: 1]], 
+                                                            [$set: [status: "in-progress", taken: taken]]) as Message
             if (result?.id) {
+                //Update the stats on the Queue
+                Queue.collection.findAndModify(['_id': queue.id], [$inc:['stats.in-progress': 1]])
+                                Queue.collection.findAndModify(['_id': queue.id], [$inc:['stats.pending': -1]])
                 result.status = "in-progress"
                 result.taken = taken
                 log.debug("User ${username} picked up message ${result.id} from queue ${queueName}")
@@ -274,6 +277,7 @@ class QueueService {
             queueMessage.messageContainer = [type: "queue", id: queue.id, name: queue.name]
        
             if(queueMessage.save(flush:true)){
+                Queue.collection.findAndModify(['_id': queue.id], [$inc:['stats.pending': 1]])
                 log.info("Added new message ${queueMessage.id as String} to queue ${queueName} for ${username}")
                 return queueMessage.render()
             }  else {
@@ -348,6 +352,8 @@ class QueueService {
                 return "WrongQueueName"
             }
 
+            def origStatus = queueMessage.status
+
             //Make sure the status passed is valid
             queueMessage.status = messageUpdate.status 
             if (! queueMessage.validate()){
@@ -365,6 +371,11 @@ class QueueService {
             def result = Message.collection.update([ _id : new ObjectId(messageId)],[$set: [status: messageUpdate.status, updated: updated] ])
 
             if (result) {
+
+              //Update Queue stats
+              Queue.collection.findAndModify(['_id': topic.id], [$inc:["status.${Origstatus}": -1]])
+              Queue.collection.findAndModify(['_id': topic.id], [$inc:["status.${queueMessage.status}": 1]])
+
               log.info("Updated ${messageId} to status ${messageUpdate.status}")
               //redo the search and return the updated object
               queueMessage = Message.collection.findOne([ _id : new ObjectId(messageId)]) as Message
@@ -400,6 +411,7 @@ class QueueService {
             def queueMessageHash = queueMessage.render()
 
             queueMessage.delete(flush: true)
+            Queue.collection.findAndModify(['_id': topic.id], [$inc:["status.${queue.status}": -1]])
             log.warn("Message ${messageId} deleted")
             return queueMessageHash    
         } else {

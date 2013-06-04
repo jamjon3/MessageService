@@ -5,56 +5,60 @@ import java.text.SimpleDateFormat
 import groovy.time.*
 import grails.converters.*
 import org.joda.time.*
-
-
+import java.util.concurrent.TimeUnit
 
 class StatsService {
+    def mongo
     def grailsApplication
     static transactional = true
 
     //These are the statuses we want to track
-    def statusList = ['pending','in-progress']
+    def statusList = ['pending','in-progress','error']
 
-    def getQueueCounts(){
-      def queueCounts = [:]
-      Queue.findAll().each { queue ->
-        queueCounts[queue.name] = [:]
+    def getAllQueueCounts(){
+      def messageTotals = [:]
+      def statusTotals = [:]
+  
+      Queue.findAll().each { queue ->      
+        messageTotals[queue.name] = queue.render().stats.messages
         statusList.each { status ->
-          queueCounts[queue.name][status] = countQueueMessages(queue.name, status)
+          if(! statusTotals[status]) statusTotals[status] = 0
+          statusTotals[status] += queue.stats[status]
         }
-        
       }
-      return queueCounts
+      return [messages: messageTotals, status: statusTotals]
     }
 
-    def getTopicCounts(){
-      def topicCounts = [:]
-      Topic.findAll().each { topic ->
-        topicCounts[topic.name] = countTopicMessages(topic.name)
+    
+    def getAllTopicCounts(name = null){
+      def messageTotals = [:]
+      Topic.findAll().each { topic -> 
+        messageTotals[topic.name] = topic.render().stats.messages
       }
-      return topicCounts
-    }
-
-    def countQueueMessages(queueName = null,status = null) {
-        def queue = (queueName)?Queue.findByName(queueName):null
-        if(queue && status) {
-            Message.collection.count(["messageContainer.name": queue.name, "messageContainer.type": "queue", status: status])
-        } else if(queue) {
-            Message.collection.count(["messageContainer.name": queue.name, "messageContainer.type": "queue"])
-        } else if(status) {
-            Message.collection.count(["messageContainer.type": "queue", status: status])
-        } else {
-            Message.collection.count(["messageContainer.type": "queue"])
-        }        
+      return [messages:messageTotals]
     }
     
-    def countTopicMessages(topicName = null) {
-        def topic = (topicName)?Topic.findByName(topicName):null
-        if(topic) {
-            Message.collection.count(["messageContainer.name": topic.name, "messageContainer.type": "topic"])           
-        } else {
-            Message.collection.count(["messageContainer.type": "topic"])           
-        }        
+    def getQueueCounts(name){
+      def queue = Queue.collection.find([name: name]).limit(1) as Queue
+      return queue.render().stats
+    }
+    
+    def getTopicCounts(name = null){
+      def topic = Topic.collection.find([name: name]).limit(1) as Topic
+      return topic.render().stats
+    }
+
+    def countAllMessages(){
+      def results = [topic:0, queue:0]
+
+      getAllQueueCounts().messages.each { key, value ->
+        results.queue += value
+      }
+      getAllTopicCounts().messages.each { key, value ->
+        results.topic += value
+      }
+
+      return results
     }
 
     def getNewestQueueMessage(container = null, status = null){
@@ -84,13 +88,9 @@ class StatsService {
     private def getMessageByAge(String containerType, String containerName, String status, Integer sortType){
       def searchParams = getSearchParams(containerType, containerName, status)
 
-      if(! searchParams instanceof Map) {
-        return "Error"
-      }
-
       def result = Message.collection.find(searchParams).sort(createTime: sortType).limit(1) as Message
 
-      def resultMap = [:]
+      def resultMap = [messageId:'none', messageDetails:'No messages found!', createTime: 0, age: null]
       if (result){
         resultMap.messageId = result.render().id
         resultMap.messageDetails = result.render().messageDetails
@@ -100,100 +100,18 @@ class StatsService {
       return resultMap
     }
 
-    /**
-    * Returns a map that can be used as search parameters for a MongoDB query
-    **/
-    private def getSearchParams(containerType = null, containerName = null, status){
-      def searchParams
-      def messageContainer
+    def getAverageMessageAge(containerType = null, containerName = null, status = null){
+       def searchParams = getSearchParams(containerType, containerName, status)
 
-      if (containerName) {
-        if(containerType == 'topic') {
-          messageContainer = Topic.findByName(containerName)
-          if (!messageContainer) return 'ContainerNotFound'
-        } else if (containerType == 'queue'){
-          messageContainer = Queue.findByName(containerName)
-          if (!messageContainer) return 'ContainerNotFound'        
-        }
-      }
-
-      if (status && containerName && messageContainer){
-        searchParams = ["messageContainer.name": messageContainer.name, "messageContainer.type": containerType, status: status]
-      } else if (containerName && messageContainer){
-        searchParams = ["messageContainer.name": messageContainer.name, "messageContainer.type": containerType]
-      } else if (status && messageContainer){
-        searchParams = ["messageContainer.type": containerType, status: status]
-      } else if (containerName){
-        searchParams = ["messageContainer.type": containerType]
-      } else if (status){
-        searchParams = [status: status]
-      }
-
-      return searchParams
-    }
-
-    def getMessgesPerMinute(action){
-
-      Message.collection.aggregate(
-        [ $project : [  action: true, 
-                        date_time: [
-                          'y': ['$year': '$auditTime'],
-                          'm': ['$month': '$auditTime'],
-                          'd': ['$dayOfMonth': '$auditTime'],
-                          'h': ['$hour': '$auditTime'],
-                          'min': ['$minute': '$auditTime']
-                        ]
-                      ] 
-        ],
-        [ 
-          $group : [
-            '_id' : [
-                'a' : '$action',
-                'y' : '$date_time.y',
-                'm' : '$date_time.m',
-                'd' : '$date_time.d',
-                'h' : '$date_time.h',
-                'min' : '$date_time.min',
-//                'msgs': [$sum: 1]
-            ]
-          ] 
-        ]
-    )
-/*
-
-'p':'$path',
-... 'y': '$date.y',
-... 'm': '$date.m',
-... 'd': '$date.d' },
-... 'hits': { '$sum': 1 } } },
-      cond: { ord_dt: { $gt: new Date( '01/01/2012' ) } },
-
-      //def result = db.clicks.group([day: true], [:], [count: 0], "function(doc, out) { out.count += doc.total }")
-      def command = [ key: action,
-                      cond: [
-                          //action: "CREATE_MESSAGE"//[ 
-                            [$match : [action: "CREATE_MESSAGE"]]
-                        ], 
-                      initial: [count: 0], 
-                      $reduce: "function(doc, out) { out.count += 1 }"
-                    ]
-
-      Message.collection.group(command)
-      */
-    }
-
-
-    def getAverageMessageAge(containerName = null, status = null){
-      /* Define a Map-Reduce function to get the average age */
-      Message.collection.mapReduce(
+      // Define a Map-Reduce function to get the average age
+      def collectStats = Message.collection.mapReduce(
         """
           function mapFunction() {
-            var key = this.messageContainer.name
+            var key = "AvgMesgAge"
             var value = {
-              name: this.messageContainer.name,
-              total_age: new Date() - new Date(this.createTime),
+              totalAge: new Date() - new Date(this.createTime),
               count: 1,
-              avg_age: 0
+              avgAge: 0
             };
             emit(key, value);
           };
@@ -201,28 +119,43 @@ class StatsService {
         """
           function reduce(key, values) {
             var reducedObject = {
-              name: key,
-              total_age: 0,
+              totalAge: 0,
               count: 0,
-              avg_age: 0
+              avgAge: 0
             };
 
             values.forEach( function(value) {
-              reducedObject.total_age += value.total_age;
+              reducedObject.totalAge += value.totalAge;
               reducedObject.count += value.count;
-              if(reducedObject.total_age > 0) reducedObject.avg_age = reducedObject.total_age / reducedObject.count
+              if(reducedObject.totalAge > 0) reducedObject.avgAge = reducedObject.totalAge / reducedObject.count
               }
             );
             return reducedObject;
           };
         """,
-        /* Collection to store the results in */
-        "stats-avg_age",
-        /* Query that defines the input to the Map Reduce Function*/
-        [:]
+        //Collection to store the results in
+        "averageMessageAge",  
+        //Query that defines the input to the Map Reduce Function
+        searchParams
         )
+      
+        /*
+        * Connect to MongoDB and get the result set.  Since this isn't a domain
+        * object, we have to create a new connection */ 
+        def db = mongo.getDB(grailsApplication.config.grails.mongo.databaseName)
+        def result = db.averageMessageAge.find()
+
+        if (result){
+          return convertToTimeDuration(result[0].value.avgAge as Long) as String
+        } else {
+          return
+        }
     }
 
+
+    /**
+
+**/
     def listStats(tagFilter = null) {
         def logFile = grailsApplication.config.statsLogFile
         return new File(logFile).withReader { inr ->
@@ -530,6 +463,55 @@ class StatsService {
             mc.clear()
             return 0
         }.call(listStats().findAll { it.tag == "createTopicMessage"})
+    }
+/**
+ Helper Methods
+**/
+    /**
+    * Returns a map that can be used as search parameters for a MongoDB query
+    **/
+    private def getSearchParams(containerType, containerName, status){
+      def searchParams
+      def messageContainer
+
+      if (containerName) {
+        if(containerType == 'topic') {
+          messageContainer = Topic.findByName(containerName)
+          if (!messageContainer) return 'ContainerNotFound'
+        } else if (containerType == 'queue'){
+          messageContainer = Queue.findByName(containerName)
+          if (!messageContainer) return 'ContainerNotFound'        
+        }
+      }
+
+      if (status && containerName && messageContainer){
+        searchParams = ["messageContainer.name": messageContainer.name, "messageContainer.type": containerType, status: status]
+      } else if (containerName && messageContainer){
+        searchParams = ["messageContainer.name": messageContainer.name, "messageContainer.type": containerType]
+      } else if (status && messageContainer){
+        searchParams = ["messageContainer.type": containerType, status: status]
+      } else if (containerType){
+        searchParams = ["messageContainer.type": containerType]
+      } else if (status){
+        searchParams = [status: status]
+      } 
+
+      return searchParams
+    }
+
+    private def convertToTimeDuration(input){
+
+      def days = input / 86400000 as int
+      def remainder = input - days * 86400000
+      def hours = remainder / 3600000 as int
+      remainder = remainder - hours * 3600000
+      def mins = remainder / 60000 as int
+      remainder = remainder - mins * 60000
+      def secs = remainder / 1000 as int
+      remainder = remainder - secs * 1000
+      def mils = remainder as int
+
+      new TimeDuration(days, hours, mins, secs, mils)
     }
 
 }

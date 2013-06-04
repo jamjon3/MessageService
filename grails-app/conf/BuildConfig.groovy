@@ -29,7 +29,7 @@ grails.project.dependency.resolution = {
     plugins {
         compile ":mongodb:1.2.0"
         compile ":joda-time:1.4"
-        compile ":perf4j:0.1.1"
+        //compile ":perf4j:0.1.1"
         compile ":spring-security-core:1.2.7.3"
         compile ":spring-security-cas-usf:1.2.0"
         compile ":spring-security-ldap:1.0.6"

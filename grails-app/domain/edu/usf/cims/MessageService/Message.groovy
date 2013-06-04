@@ -17,9 +17,9 @@ class Message {
         createProg(blank:false,nullable:false)
     }
 
+    /* NOTE: GORM doesn't currently support indexes on embedding fields, so another index s created in the bootstrap file*/
     static mapping = {
         createTime index:true
-        messageContainer index:true
     }
 
     def render() { 

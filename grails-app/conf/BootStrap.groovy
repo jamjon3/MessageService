@@ -4,8 +4,15 @@ import grails.util.GrailsNameUtils
 import grails.util.GrailsUtil
 
 class BootStrap {
+    def grailsApplication
+    def mongo
 
     def init = { servletContext ->
+        /* GORM doesn't allow indexes on embedded fields, so we have to create them here */
+        def db = mongo.getDB(grailsApplication.config.grails.mongo.databaseName)
+        db.message.ensureIndex(['messageContainer.id':1 , status:1])
+        db.message.ensureIndex(['messageContainer.id':1 , status:1, createTime:1])
+
         switch(GrailsUtil.environment){
             case "development":
                 println "#### Development Mode (Start Up)"

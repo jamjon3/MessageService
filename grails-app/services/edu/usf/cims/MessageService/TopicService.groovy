@@ -2,17 +2,11 @@ package edu.usf.cims.MessageService
 
 import com.mongodb.DBCursor
 import grails.converters.*
+import java.util.regex.Pattern
+import java.util.regex.Matcher
 
 class TopicService {
 
-/*
-    static profiled = {
-        createTopicMessage(tag: "createTopicMessage",message:"Created a new Topic Message")
-        viewMessage(tag:"viewMessage",message:"Retrieved a Topic Message")
-        listTopicMessages(tag:"listTopicMessages",message:"Retrieved a list of Topic Messages")
-        filterTopicMessages(tag:"filterTopicMessages",message:"Retrieved a filtered list of Topic Messages")
-    }
-*/
     static transactional = true
 
 
@@ -239,8 +233,10 @@ class TopicService {
             topicMessage.messageContainer = [type: "topic", id: topic.id, name: topic.name]
        
             if(topicMessage.save(flush:true)){
-                Topic.collection.findAndModify(['_id': topic.id], [$inc:['messages': 1]])
+                
                 log.info("Added new message ${topicMessage.id as String} to topic ${topicName} for ${username}")
+                Topic.collection.findAndModify(['_id': topic.id], [$inc:['messages': 1]])
+                
                 return topicMessage.render()
             }  else {
                 log.error("Creating new message for topic ${topicName} failed! Message: ${message}")
@@ -277,49 +273,6 @@ class TopicService {
         }
     }
 
-/*
-    def modifyMessage(String username, String topicName, String messageId, Map messageUpdate) {
-        def topic = Topic.findByName(topicName)
-        if (topic) {
-            
-            //Check authN
-            if (! topic.canWrite(username)) return "NotAuthorized"     
-
-            def topicMessage = Message.findById(messageId)
-            if (!topicMessage) {
-                log.error("MessageID ( ${messageId} ) not found")
-                return "MessageNotFound"
-            }
-
-            if (topicMessage.messageContainer.id != topic.id) {
-                log.error("MessageID ( ${messageId} ) does not belong to topic ${topicName}")
-                return "WrongTopicName"
-            }
-
-            messageUpdate.each { key,value ->
-                if(key != 'id') {
-                    if(key == 'messageData') {         
-                        topicMessage.messageData = messageUpdate.messageData
-                    } else if(!key.startsWith('messageData.')){
-                        topicMessage[key] = value                                
-                    }
-                }
-            }
-            
-            if(!topicMessage.save()) {
-                log.error("Message ${messageId} update failed")
-                return "SaveFailed"
-            } else {
-                log.info("Message ${messageId} updated")
-                return topicMessage.render()
-            }                                       
-        } else { 
-            log.warn("Invalid topic ( ${topicName} ) was given")
-            return "TopicNotFound"
-        } 
-    }
-*/
-
     def deleteMessage(String username, String topicName, String messageId) {
         def topic = Topic.findByName(topicName)
         if (topic) {            
@@ -328,8 +281,7 @@ class TopicService {
             if (! topic.canWrite(username)) return "NotAuthorized"   
 
             def topicMessage = Message.findById(messageId)
-            if (!topicMessage) {
-                Topic.collection.findAndModify(['_id': topic.id], [$inc:['messages': -1]])
+            if (!topicMessage) {          
                 log.error("MessageID ( ${messageId} ) not found")
                 return "MessageNotFound"
             }
@@ -340,8 +292,10 @@ class TopicService {
             }
 
             def topicMessageHash = topicMessage.render()
-
+            
             topicMessage.delete()
+            Topic.collection.findAndModify(['_id': topic.id], [$inc:['messages': -1]])
+
             log.warn("Message ${messageId} deleted")
             return topicMessageHash    
         } else {

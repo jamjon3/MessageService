@@ -5,15 +5,11 @@ import org.bson.types.ObjectId
 
 import grails.converters.*
 
+import java.util.regex.Pattern
+import java.util.regex.Matcher
+
 class QueueService {
-/*
-    static profiled = {
-        createQueueMessage(tag: "createQueueMessage",message:"Created a new Queue Message")
-        peek(tag:"peek",message:"Peeked at a Queue Message")
-        getNextMessage(tag:"getNextMessage",message:"Retrieved a Queue Messages")
-        listInProgressMessages(tag:"listInProgressMessages",message:"Retrieved a list of Queue Messages that are in progress")
-    }
-*/
+
     static transactional = true
 
 
@@ -373,8 +369,8 @@ class QueueService {
             if (result) {
 
               //Update Queue stats
-              Queue.collection.findAndModify(['_id': topic.id], [$inc:["status.${Origstatus}": -1]])
-              Queue.collection.findAndModify(['_id': topic.id], [$inc:["status.${queueMessage.status}": 1]])
+              Queue.collection.findAndModify(['_id': queue.id], [$inc:["status.${origStatus}": -1]])
+              Queue.collection.findAndModify(['_id': queue.id], [$inc:["status.${queueMessage.status}": 1]])
 
               log.info("Updated ${messageId} to status ${messageUpdate.status}")
               //redo the search and return the updated object
@@ -411,7 +407,7 @@ class QueueService {
             def queueMessageHash = queueMessage.render()
 
             queueMessage.delete(flush: true)
-            Queue.collection.findAndModify(['_id': topic.id], [$inc:["status.${queue.status}": -1]])
+            Queue.collection.findAndModify(['_id': queue.id], [$inc:["status.${queueMessageHash.status}": -1]])
             log.warn("Message ${messageId} deleted")
             return queueMessageHash    
         } else {

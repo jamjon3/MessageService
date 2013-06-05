@@ -459,66 +459,6 @@ class TopicController {
       }
     }
 
-/*
-    @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def modifyMessage = {
-      def username = springSecurityService.authentication.name
-      def ipAddress = request.getRemoteAddr()
-      if (params.id){
-        def message = getMessageBody()
-        if(! message) {
-          def reason = [code: 400, message: 'Message data required']
-          auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'MODIFY_MESSAGE_ERROR', containerName: params.name, containerType: 'TOPIC', reason: reason.message])
-          renderError(reason.code, reason.message)
-          return
-        }
-        def topicMessage = topicService.modifyMessage(username, params.name, params.id, message, ipAddress)
-        if(topicMessage instanceof Map) {
-          auditService.writeAuditEntry([  actor: username, 
-                                          ipAddress: ipAddress, 
-                                          action: 'MODIFY_MESSAGE_STATUS', 
-                                          containerName: params.name, 
-                                          containerType: 'TOPIC', 
-                                          details:[ messageId: topicMessage.messageId ]
-                                      ])              
-            renderResponse([count:1,messages:topicMessage])
-            return                          
-        } else {
-          def reason = [:]
-          switch(topicMessage) {
-            case "TopicNotFound":
-              reason.code = 404
-              reason.message = 'Topic does not exist'
-            break
-            case "MessageNotFound":
-              reason.code = 404
-              reason.message = 'Message does not exist'
-            break
-            case "WrongTopicName":
-              reason.code = 400
-              reason.message = 'Requested message does not belong to requested topic'
-            break
-            case "NotAuthorized":
-              reason.code = 403
-              reason.message = 'You are not authorized to perform this operation'
-            break
-            default:
-              reason.code = 400
-              reason.message = 'Message could not be updated'
-            break
-          }
-          auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'MODIFY_MESSAGE_ERROR', containerName: params.name, containerType: 'TOPIC', reason: reason.message, details:[ messageId: params.id]])
-          renderError(reason.code, reason.message)
-          return
-        }
-      } else {
-        def reason = [code: 400, message: 'MissingRequiredQueryParameter: Message id required']
-        auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'MODIFY_MESSAGE_ERROR', containerName: params.name, containerType: 'TOPIC', reason: reason.message])
-        renderError(reason.code, reason.message)
-        return
-      }
-    }
-*/
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
     def deleteMessage = {

@@ -7,6 +7,8 @@ import grails.converters.*
 import org.joda.time.*
 import java.util.concurrent.TimeUnit
 
+import com.mongodb.MapReduceCommand.OutputType
+
 class StatsService {
     def mongo
     def grailsApplication
@@ -16,75 +18,62 @@ class StatsService {
     def statusList = ['pending','in-progress','error']
 
     def getAllQueueCounts(){
-      def messageTotals = [:]
-      def statusTotals = [:]
-  
-      Queue.findAll().each { queue ->      
-        statusList.each { status ->
-          if(! statusTotals[status]) statusTotals[status] = 0
-          statusTotals[status] += queue.stats[status]
-        }
+      def queueCounts = [:]
+      Queue.findAll().each { queue ->
+        queueCounts[queue.name] = [:]
+          queueCounts[queue.name] = getQueueCounts(queue.name)        
       }
-      return [messages: messageTotals, status: statusTotals]
+     
+      return queueCounts
     }
 
-    
-    def getAllTopicCounts(name = null){
+    def getAllTopicCounts(){
       def messageTotals = [:]
-      Topic.findAll().each { topic -> 
-        messageTotals[topic.name] = topic.render().stats.messages
+      Topic.findAll().each { topic ->
+        messageTotals[topic.name] = countMessages('topic', topic.name)
       }
       return [messages:messageTotals]
     }
     
-    def getQueueCounts(name){
-      def queue = Queue.collection.find([name: name]).limit(1) as Queue
-      return queue.render().stats
+    def countMessages(containerType = null, containerName = null, status = null){
+       def searchParams = getSearchParams(containerType, containerName, status)
+       return Message.collection.count(searchParams)
+    }
+
+    def getQueueCounts(name, status = null){
+      def queueCounts = [:]
+      queueCounts.messages = countMessages('queue', name, status)
+      
+      if (! status) {
+        queueCounts.status = [:]
+        statusList.each { myStatus ->
+          queueCounts.status[myStatus] = countMessages('queue', name, myStatus)
+        }
+      }
+
+      return queueCounts
     }
     
-    def getTopicCounts(name = null){
-      def topic = Topic.collection.find([name: name]).limit(1) as Topic
-      return topic.render().stats
+    def getTopicCounts(name){
+      def topicCounts = [:]
+      topicCounts.messages = countMessages('topic', name)
+      return topicCounts
     }
 
     def countAllMessages(){
       def results = [topic:0, queue:0]
 
-      getAllQueueCounts().messages.each { key, value ->
-        results.queue += value
+      getAllQueueCounts().each { name, queueStats ->
+        results.queue += queueStats.messages
       }
-      getAllTopicCounts().messages.each { key, value ->
-        results.topic += value
+      getAllTopicCounts().messages.each { name, topicStats ->
+        results.topic += topicStats.value
       }
 
       return results
     }
 
-    def getNewestQueueMessage(container = null, status = null){
-      return getMessageByAge('queue', container, status, -1)
-    }
-
-    def getNewestTopicMessage(container = null){
-      return getMessageByAge('topic', container, null, -1)
-    }
-
-    def getOldestQueueMessage(container = null, status = null){
-      return getMessageByAge('queue', container, status, 1)
-    }
-
-    def getOldestTopicMessage(container = null){
-      return getMessageByAge('topic', container, null, 1)
-    }
-
-    def getOldestMessage(status = null){
-      return getMessageByAge(null, null, status, 1)
-    }
-
-    def getNewestMessage(status = null){
-      return getMessageByAge(null, null, status, -1)
-    }
-
-    private def getMessageByAge(String containerType, String containerName, String status, Integer sortType){
+    def getMessageByAge(String containerType, String containerName, String status, Integer sortType){
       def searchParams = getSearchParams(containerType, containerName, status)
 
       def result = Message.collection.find(searchParams).sort(createTime: sortType).limit(1) as Message
@@ -103,7 +92,7 @@ class StatsService {
        def searchParams = getSearchParams(containerType, containerName, status)
 
       // Define a Map-Reduce function to get the average age
-      def collectStats = Message.collection.mapReduce(
+      def result = Message.collection.mapReduce(
         """
           function mapFunction() {
             var key = "AvgMesgAge"
@@ -132,337 +121,66 @@ class StatsService {
             return reducedObject;
           };
         """,
-        //Collection to store the results in
-        "averageMessageAge",  
+        //Name of collection to write results to 
+        "",
+        //Return result instead of writing it to a collection
+        OutputType.INLINE,  
         //Query that defines the input to the Map Reduce Function
         searchParams
         )
-      
-        /*
-        * Connect to MongoDB and get the result set.  Since this isn't a domain
-        * object, we have to create a new connection */ 
-        def db = mongo.getDB(grailsApplication.config.grails.mongo.databaseName)
-        def result = db.averageMessageAge.find()
 
-        if (result){
-          return convertToTimeDuration(result[0].value.avgAge as Long) as String
+        /*
+        * Since we're using OutputType.INLINE, this isn't needed.  Leaving it for reference.
+        *
+        * Connect to MongoDB and get the result set.  Since this isn't a domain
+        * object, we have to create a new connection
+        * def db = mongo.getDB(grailsApplication.config.grails.mongo.databaseName)
+        * def result = db.averageMessageAge.find()
+        */
+
+        if (result?.commandResult?.results[0]?.value?.avgAge){
+          return convertToTimeDuration(result.commandResult.results[0].value.avgAge as Long) as String
         } else {
           return
         }
     }
 
-
-    /**
-
-**/
-    def listStats(tagFilter = null) {
-        def logFile = grailsApplication.config.statsLogFile
-        return new File(logFile).withReader { inr ->
-            def messageCalls = []
-            def newMessage = [:]
-            def tags = (tagFilter)?[ tagFilter ]:[
-                "createQueueMessage",
-                "createTopicMessage",
-                "getNextMessage",
-                "listInProgressMessages",
-                "listTopicMessages",
-                "peek",
-                "viewMessage"
-            ]
-            inr.eachLine{line-> 
-                if(line.startsWith("Performance")) {
-                    def perfLine = line.tokenize()
-                    newMessage.serviceCallDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(perfLine[2] + ' ' + perfLine[3])
-                } else if(line.startsWith("Tag")) {
-                    // Skip
-                } else if(tags.find { tag -> line.startsWith(tag) }) {
-                    def stats = line.tokenize()
-                    newMessage.tag = stats[0]                    
-                    newMessage.average = stats[1]
-                    newMessage.minimum = stats[2]
-                    newMessage.maximum = stats[3]
-                    newMessage.standardDeviation = stats[4]                    
-                } else if( !(line.trim()) ) {
-                    if(newMessage.tag) {
-                        messageCalls.add(newMessage.clone())
-                    }
-                    newMessage.clear()
-                }
-            }
-            return messageCalls
-        }.sort { it.serviceCallDate }
+    def getMessagesPerMinute(containerType, actionType, timeScale, startTime, endTime){
+      return getMessagesPerMinute(containerType, null, actionType, timeScale, startTime, endTime)
     }
     
-    def getRunningStats() {
-        return { mc ->
-            return { rs ->
-                rs.messagesPerMin = rs.queueMessagesPerMin + rs.topicMessagesPerMin
-                rs.retrievedMessagesPerMin = rs.retrievedQueueMessagesPerMin + rs.retrievedTopicMessagesPerMin
-                rs.oldestMessage = (rs.oldestMessageInQueue)?
-                    (
-                        (rs.oldestMessageInTopic)?
-                            ( 
-                                (rs.oldestMessageInQueue < rs.oldestMessageInTopic)?
-                                    rs.oldestMessageInQueue
-                                    :rs.oldestMessageInTopic
-                            )
-                            :rs.oldestMessageInQueue
-                    ):rs.oldestMessageInTopic
-                rs.newestMessage = (rs.newestMessageInQueue)?
-                    (
-                        (rs.newestMessageInTopic)?
-                            ( 
-                                (rs.newestMessageInQueue > rs.newestMessageInTopic)?
-                                    rs.newestMessageInQueue
-                                    :rs.newestMessageInTopic
-                            )
-                            :rs.newestMessageInQueue
-                    ):rs.newestMessageInTopic
-                long secondInMillis = 1000
-                long minuteInMillis = secondInMillis * 60
-                long hourInMillis = minuteInMillis * 60
-                long dayInMillis = hourInMillis * 24
-                long yearInMillis = dayInMillis * 365      
-                def qmAgesInMS = QueueMessage.withCriteria {
-                    projections {
-                        groupProperty("createTime")
-                    }
-                }.collect { new Date().time - it.time }
-                
-                rs.averageQueueMessageAge = { long diff ->
-                    def age = [:]
-                    def darr = []
-                    age.elapsedYears = (int) (diff / yearInMillis)
-                    if(age.elapsedYears) {
-                        darr.add("${age.elapsedYears} years")
-                    }                    
-                    diff = diff % yearInMillis
-                    age.elapsedDays = (int) (diff / dayInMillis)
-                    if(age.elapsedDays) {
-                        darr.add("${age.elapsedDays} days")
-                    }                    
-                    diff = diff % dayInMillis
-                    age.elapsedHours = (int) (diff / hourInMillis)
-                    if(age.elapsedHours) {
-                        darr.add("${age.elapsedHours} hours")
-                    }                    
-                    diff = diff % hourInMillis;
-                    age.elapsedMinutes = (int) (diff / minuteInMillis)
-                    if(age.elapsedMinutes) {
-                        darr.add("${age.elapsedMinutes} min")
-                    }                    
-                    diff = diff % minuteInMillis;
-                    age.elapsedSeconds = (int) (diff / secondInMillis)
-                    if(age.elapsedSeconds) {
-                        darr.add("${age.elapsedSeconds} sec")
-                    }
-                    return (darr.size())?darr.join(", "):'0 sec'
-                }.call((long) (qmAgesInMS.size())?(qmAgesInMS.sum() / qmAgesInMS.size()):0)
-                
-                def tmAgesInMS = TopicMessage.withCriteria {
-                    projections {
-                        groupProperty("createTime")
-                    }
-                }.collect { new Date().time - it.time }
-                
-                rs.averageTopicMessageAge = { long diff ->
-                    def age = [:]
-                    def darr = []
-                    age.elapsedYears = (int) (diff / yearInMillis)
-                    if(age.elapsedYears) {
-                        darr.add("${age.elapsedYears} years")
-                    }                    
-                    diff = diff % yearInMillis
-                    age.elapsedDays = (int) (diff / dayInMillis)
-                    if(age.elapsedDays) {
-                        darr.add("${age.elapsedDays} days")
-                    }                    
-                    diff = diff % dayInMillis
-                    age.elapsedHours = (int) (diff / hourInMillis)
-                    if(age.elapsedHours) {
-                        darr.add("${age.elapsedHours} hours")
-                    }                    
-                    diff = diff % hourInMillis;
-                    age.elapsedMinutes = (int) (diff / minuteInMillis)
-                    if(age.elapsedMinutes) {
-                        darr.add("${age.elapsedMinutes} min")
-                    }                    
-                    diff = diff % minuteInMillis;
-                    age.elapsedSeconds = (int) (diff / secondInMillis)
-                    if(age.elapsedSeconds) {
-                        darr.add("${age.elapsedSeconds} sec")
-                    }
-                    return (darr.size())?darr.join(", "):'0 sec'
-                }.call((long) (tmAgesInMS.size())?(tmAgesInMS.sum() / tmAgesInMS.size()):0)
-                                
-                rs.averageMessageAge = { long diff ->
-                    def age = [:]
-                    def darr = []
-                    age.elapsedYears = (int) (diff / yearInMillis)
-                    if(age.elapsedYears) {
-                        darr.add("${age.elapsedYears} years")
-                    }                    
-                    diff = diff % yearInMillis
-                    age.elapsedDays = (int) (diff / dayInMillis)
-                    if(age.elapsedDays) {
-                        darr.add("${age.elapsedDays} days")
-                    }                    
-                    diff = diff % dayInMillis
-                    age.elapsedHours = (int) (diff / hourInMillis)
-                    if(age.elapsedHours) {
-                        darr.add("${age.elapsedHours} hours")
-                    }                    
-                    diff = diff % hourInMillis;
-                    age.elapsedMinutes = (int) (diff / minuteInMillis)
-                    if(age.elapsedMinutes) {
-                        darr.add("${age.elapsedMinutes} min")
-                    }                    
-                    diff = diff % minuteInMillis;
-                    age.elapsedSeconds = (int) (diff / secondInMillis)
-                    if(age.elapsedSeconds) {
-                        darr.add("${age.elapsedSeconds} sec")
-                    }
-                    return (darr.size())?darr.join(", "):'0 sec'
-                }.call((long) { 
-                        if(qmAgesInMS.size() && tmAgesInMS.size()) {
-                            return ((tmAgesInMS.sum()+qmAgesInMS.sum()) / (tmAgesInMS.size()+qmAgesInMS.size()))
-                        } else if(qmAgesInMS.size()) {
-                            return (qmAgesInMS.sum() / qmAgesInMS.size())
-                        } else if(tmAgesInMS.size()) {
-                            return (tmAgesInMS.sum() / tmAgesInMS.size())
-                        } else {
-                            return 0
-                        }                                    
-                    }.call() 
-                )
-                rs.lastRetrievedMessage = (rs.lastRetrievedQueueMessage)?
-                    (
-                        (rs.newestMessageInTopic)?
-                            ( 
-                                (rs.lastRetrievedQueueMessage > rs.newestMessageInTopic)?
-                                    rs.lastRetrievedQueueMessage
-                                    :rs.newestMessageInTopic
-                            )
-                            :rs.lastRetrievedQueueMessage
-                    ):rs.newestMessageInTopic
-                
-                return rs
-            }.call([
-                queueMessagesPerMin: { qm ->
-                    def min = qm.min { it.serviceCallDate }
-                    if(min) {
-                        return qm.size()/(((new Date().time - min.serviceCallDate.time)/1000)/60)   
-                    }
-                    return 0
-                }.call(mc.findAll { it.tag == "createQueueMessage"}),
-                topicMessagesPerMin: { tm ->
-                    def min = tm.min { it.serviceCallDate }
-                    if(min) {
-                        return tm.size()/(((new Date().time - min.serviceCallDate.time)/1000)/60)   
-                    }
-                    return 0
-                }.call(mc.findAll { it.tag == "createTopicMessage"}),
-                retrievedQueueMessagesPerMin: { qm ->
-                    def min = qm.min { it.serviceCallDate }
-                    if(min) {
-                        return qm.size()/(((new Date().time - min.serviceCallDate.time)/1000)/60)   
-                    }
-                    return 0
-                }.call(mc.findAll { it.tag == "getNextMessage"}),
-                retrievedTopicMessagesPerMin: { tm ->
-                    def min = tm.min { it.serviceCallDate }
-                    if(min) {
-                        return tm.size()/(((new Date().time - min.serviceCallDate.time)/1000)/60)   
-                    }
-                    return 0
-                }.call(mc.findAll { it.tag == "viewMessage"}),
-                oldestMessageInQueue: QueueMessage.createCriteria().get {
-                    projections {
-                        min("createTime")
-                    }
-                },
-                newestMessageInQueue: QueueMessage.createCriteria().get {
-                    projections {
-                        max("createTime")
-                    }
-                },
-                oldestMessageInTopic: TopicMessage.createCriteria().get {
-                    projections {
-                        min("createTime")
-                    }
-                },
-                newestMessageInTopic: TopicMessage.createCriteria().get {
-                    projections {
-                        max("createTime")
-                    }
-                },
-                lastRetrievedQueueMessage: { qm ->
-                    if(qm.size()) {
-                        return qm.max { it.serviceCallDate }
-                    }
-                    return null
-                }.call(mc.findAll { it.tag == "getNextMessage"}),
-                lastRetrievedTopicMessage: { tm ->
-                    if(tm.size()) {
-                        return tm.max { it.serviceCallDate }
-                    }
-                    return null
-                }.call(mc.findAll { it.tag == "viewMessage"})
-                
-            ])            
-        }.call(listStats())
-    }
+    def getMessagesPerMinute(containerType, containerName, actionType, timeScale, startTime, endTime){
+       def searchParams = [ action: actionType,
+                            auditTime : [ $gte : startTime, $lt : endTime ]
+                          ]
+        if(containerType) searchParams.containerType = containerType
+        if(containerName) searchParams.containerName = containerName              
 
-    def retrievedQueueMessagesPerMin() {
-        return { mc ->
-            def max = mc.max { it.serviceCallDate }
-            def min = mc.min { it.serviceCallDate }
-            if(max) {
-                return mc.size()/(((new Date().time - min.serviceCallDate.time)/1000)/60)                
-            }
-            mc.clear()
-            return 0
-        }.call(listStats().findAll { it.tag == "getNextMessage"})
-    }
+       def groupParams = getGroupParams(['a': '$action'], timeScale)
 
-    def retrievedTopicMessagesPerMin() {
-        return { mc ->
-            def max = mc.max { it.serviceCallDate }
-            def min = mc.min { it.serviceCallDate }
-            if(max) {
-                // return mc.size()/(((max.serviceCallDate.time - min.serviceCallDate.time)/1000)/60)                
-                return mc.size()/(((new Date().time - min.serviceCallDate.time)/1000)/60)                
-            }
-            mc.clear()
-            return 0
-        }.call(listStats().findAll { it.tag == "viewMessage" })
-    }
-    
-    def queuedMessagesPerMin() {
-        return { mc ->
-            def max = mc.max { it.serviceCallDate }
-            def min = mc.min { it.serviceCallDate }
-            if(max) {
-                // return mc.size()/(((max.serviceCallDate.time - min.serviceCallDate.time)/1000)/60)                
-                return mc.size()/(((new Date().time - min.serviceCallDate.time)/1000)/60)                
-            }
-            mc.clear()
-            return 0
-        }.call(listStats().findAll { it.tag == "createQueueMessage"})
-    }
+       def result = AuditEntry.collection.aggregate(
+          [$match: searchParams ],
+          [$project:  ['action' : 1,
+                      'datetime':[
+                                    'y': ['$year' : '$auditTime'],
+                                    'm': ['$month' : '$auditTime'],
+                                    'd': ['$dayOfMonth' : '$auditTime'],
+                                    'h': ['$hour' : '$auditTime'],
+                                    'min': ['$minute' : '$auditTime'],
+                                    'sec': ['$second' : '$auditTime']
+                                    ]
+                      ]
+          ],
+          [$group:  ['_id': groupParams,
+                      'count' : [ $sum : 1 ]
+                    ]
+          ]
+        )
 
-    def topicMessagesPerMin() {
-        return { mc ->
-            def max = mc.max { it.serviceCallDate }
-            def min = mc.min { it.serviceCallDate }
-            if(max) {
-                // return mc.size()/(((max.serviceCallDate.time - min.serviceCallDate.time)/1000)/60)                
-                return mc.size()/(((new Date().time - min.serviceCallDate.time)/1000)/60)                
-            }
-            mc.clear()
-            return 0
-        }.call(listStats().findAll { it.tag == "createTopicMessage"})
-    }
+       return result?.commandResult?.result
+     }
+
+
 /**
  Helper Methods
 **/
@@ -496,6 +214,34 @@ class StatsService {
       } 
 
       return searchParams
+    }
+
+    private def getGroupParams(groupParams, timeScale){
+        
+        def params = [:]
+
+        switch(timeScale) {
+          case 'year':
+            params = ['y': '$datetime.y']
+          break
+          case 'month':
+            params = ['y': '$datetime.y','m': '$datetime.m']
+          break
+          case 'day':
+            params = ['y': '$datetime.y','m': '$datetime.m','d': '$datetime.d']
+          break
+          case 'hour':
+            params = ['y': '$datetime.y','m': '$datetime.m','d': '$datetime.d','h': '$datetime.h']
+          break
+          case 'minute':
+            params = ['y': '$datetime.y','m': '$datetime.m','d': '$datetime.d','h': '$datetime.h', 'min': '$datetime.min']
+          break
+          case 'second':
+            params = ['y': '$datetime.y','m': '$datetime.m','d': '$datetime.d','h': '$datetime.h', 'min': '$datetime.min', 'sec': '$datetime.sec']
+          break
+          
+        }
+        return groupParams.plus(params)
     }
 
     private def convertToTimeDuration(input){

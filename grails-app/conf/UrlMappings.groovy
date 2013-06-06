@@ -45,30 +45,24 @@ class UrlMappings {
         "/$auth/stats"(controller:"stats", parseRequest:true) {
             action = [GET:"index", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
         }
-        "/$auth/stats/main"(controller:"stats", parseRequest:true) {
-            action = [GET:"generalStats", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
+        "/$auth/stats/$statType"(controller:"stats", parseRequest:true) {
+            action = [GET:"combinedStats", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
         }
-        "/$auth/stats/queue"(controller:"stats", parseRequest:true) {
-            action = [GET:"queueStats", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
-        }
-        "/$auth/stats/topic"(controller:"stats", parseRequest:true) {
+        "/$auth/stats/$statType/topic"(controller:"stats", parseRequest:true) {
             action = [GET:"topicStats", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
         }
-        "/$auth/stats/queue/$name"(controller:"stats", parseRequest:true) {
-            action = [GET:"detailedQueueStats", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
+        "/$auth/stats/$statType/topic/$name"(controller:"stats", parseRequest:true) {
+            action = [GET:"topicStats", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
         }
-        "/$auth/stats/queue/$name/$status"(controller:"stats", parseRequest:true) {
-            action = [GET:"detailedQueueStats", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
-        }  
-        "/$auth/stats/topic/$name"(controller:"stats", parseRequest:true) {
-            action = [GET:"detailedTopicStats", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
+        "/$auth/stats/$statType/queue"(controller:"stats", parseRequest:true) {
+            action = [GET:"queueStats", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
         }
-        "/$auth/stats/queue/count"(controller:"stats", parseRequest:true) {
-            action = [GET:"queueCount", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
+        "/$auth/stats/$statType/queue/$name"(controller:"stats", parseRequest:true) {
+            action = [GET:"queueStats", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
         }
-        "/$auth/stats/topic/count"(controller:"stats", parseRequest:true) {
-            action = [GET:"topicCount", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
-        }
+        "/$auth/stats/$statType/queue/$name/$status"(controller:"stats", parseRequest:true) {
+            action = [GET:"queueStats", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
+        }           
         
 		"/"(view:"/index",parseRequest: true)
 		

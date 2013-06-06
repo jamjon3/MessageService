@@ -6,7 +6,6 @@ class Topic {
     ObjectId id
     String name
     Map permissions = [ canRead:['it-msgsvcadm'], canWrite:['it-msgsvcadm'], canAdmin:['it-msgsvcadm'] ]
-    Integer messages = 0
 
     static constraints = {
         name(   
@@ -22,9 +21,7 @@ class Topic {
 
     
     def render() { 
-      def map = [ name: name,
-                  stats:[messages: messages]
-        ]
+      [ name: name ]
     }
 
     def canRead(username){

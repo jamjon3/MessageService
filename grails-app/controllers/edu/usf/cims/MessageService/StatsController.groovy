@@ -65,75 +65,129 @@ class StatsController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def generalStats = {
+    def combinedStats = {
+            // Yesterday
+      def startTime = new Date() - 1
+      // Now
+      def endTime = new Date()
+      
+      try {
+        if (params.startTime) startTime = new Date().parse("yyyy-MM-dd'T'HH:mm:ssz", "${params.startTime}-0000")
+        if (params.endTime) endTime = new Date().parse("yyyy-MM-dd'T'HH:mm:ssz", "${params.endTime}-0000")
+      } catch (java.text.ParseException e) {
+        def reason = [code: 400, message: "Unparseable date. Dates must be in the format yyyy-MM-dd\'T\'HH:mm:ss (GMT)"]
+        renderError(reason.code, reason.message)
+        return
+      }
+
+      def timeScale = params.timeScale ?: "hour"
+      def auditAction = params.auditAction ?: "VIEW_MESSAGE"
+      def statType = params.statType ?: 'count'
+
       def results = [:]
-      results.count = statsService.countAllMessages()
-      results.oldestMessageData = statsService.getOldestMessage()
-      results.newestMessageData = statsService.getNewestMessage()
-      results.averageMessageAge = statsService.getAverageMessageAge()
+
+      switch(statType) {
+        case 'count':
+          results.count = statsService.countAllMessages()
+        break
+        case 'ageMaxMin':
+          results.oldestMessageData = statsService.getMessageByAge(null, null, null, 1)
+          results.newestMessageData = statsService.getMessageByAge(null, null, null, -1)
+        break
+        case 'averageAge':
+          results.averageMessageAge = statsService.getAverageMessageAge()
+        break
+        case 'aggregateSum':
+          results.messagesPerMinute = statsService.getMessagesPerMinute(null, null, auditAction, timeScale, startTime, endTime)
+        break
+      }
 
       renderResponse results
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
     def queueStats = {
+            // Yesterday
+      def startTime = new Date() - 1
+      // Now
+      def endTime = new Date()
+      
+      try {
+        if (params.startTime) startTime = new Date().parse("yyyy-MM-dd'T'HH:mm:ssz", "${params.startTime}-0000")
+        if (params.endTime) endTime = new Date().parse("yyyy-MM-dd'T'HH:mm:ssz", "${params.endTime}-0000")
+      } catch (java.text.ParseException e) {
+        def reason = [code: 400, message: "Unparseable date. Dates must be in the format yyyy-MM-dd\'T\'HH:mm:ss (GMT)"]
+        renderError(reason.code, reason.message)
+        return
+      }
+
+      def timeScale = params.timeScale ?: "hour"
+      def auditAction = params.auditAction ?: "VIEW_MESSAGE"
+      def queueName = params.name ?: null
+      def statType = params.statType ?: 'count'
+      def status = params.status ?: null
+
       def results = [:]
-      results.count = statsService.getAllQueueCounts()
-      results.oldestMessageData = statsService.getOldestQueueMessage()
-      results.newestMessageData = statsService.getNewestQueueMessage()
-      results.averageMessageAge = statsService.getAverageMessageAge('queue')
+
+      switch(statType) {
+        case 'count':
+          results.count = statsService.getQueueCounts(queueName, status)
+        break
+        case 'ageMaxMin':
+          results.oldestMessageData = statsService.getMessageByAge('queue', queueName, status, 1)
+          results.newestMessageData = statsService.getMessageByAge('queue', queueName, status, -1)
+        break
+        case 'averageAge':
+          results.averageMessageAge = statsService.getAverageMessageAge('queue', queueName, status)
+        break
+        case 'aggregateSum':
+          results.messagesPerMinute = statsService.getMessagesPerMinute('QUEUE', queueName, auditAction, timeScale, startTime, endTime)
+        break
+      }
 
       renderResponse results
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
     def topicStats = {
-      def results = [:]
-      results.count = statsService.getAllTopicCounts()
-      results.oldestMessageData = statsService.getOldestTopicMessage()
-      results.newestMessageData = statsService.getNewestTopicMessage()
-      results.averageMessageAge = statsService.getAverageMessageAge('topic')
-
-      renderResponse results
-    }
-
-    @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def detailedQueueStats = {
-      def results = [:]
-
-      def counts = statsService.getQueueCounts(params.name)
-      if (params.status){
-        results.count = 0
-      } else {
-        results.count = counts
-      }
-      results.oldestMessageData = statsService.getOldestQueueMessage(params.name, params.status)
-      results.newestMessageData = statsService.getNewestQueueMessage(params.name, params.status)
-
-      results.averageMessageAge = statsService.getAverageMessageAge('queue', params.name, params.status)
-      renderResponse results
-    }
-
-    @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def detailsTopicStats = {
-      def results = [:]
+      // Yesterday
+      def startTime = new Date() - 1
+      // Now
+      def endTime = new Date()
       
-      results.oldestMessageData = statsService.getOldestTopicMessage(params.name)
-      results.newestMessageData = statsService.getNewestTopicMessage(params.name)
+      try {
+        if (params.startTime) startTime = new Date().parse("yyyy-MM-dd'T'HH:mm:ssz", "${params.startTime}-0000")
+        if (params.endTime) endTime = new Date().parse("yyyy-MM-dd'T'HH:mm:ssz", "${params.endTime}-0000")
+      } catch (java.text.ParseException e) {
+        def reason = [code: 400, message: "Unparseable date. Dates must be in the format yyyy-MM-dd\'T\'HH:mm:ss (GMT)"]
+        renderError(reason.code, reason.message)
+        return
+      }
 
-      results.averageMessageAge = statsService.getAverageMessageAge('topic', params.name)
+      def timeScale = params.timeScale ?: "hour"
+      def auditAction = params.auditAction ?: "VIEW_MESSAGE"
+      def topicName = params.name ?: null
+      def statType = params.statType ?: 'count'
+
+      def results = [:]
+
+      switch(statType) {
+        case 'count':
+          results.count = statsService.getTopicCounts(topicName)
+        break
+        case 'ageMaxMin':
+          results.oldestMessageData = statsService.getMessageByAge('topic', topicName, null, 1)
+          results.newestMessageData = statsService.getMessageByAge('topic', topicName, null, -1)
+        break
+        case 'averageAge':
+          results.averageMessageAge = statsService.getAverageMessageAge('topic', topicName)
+        break
+        case 'aggregateSum':
+          results.messagesPerMinute = statsService.getMessagesPerMinute('TOPIC', topicName, auditAction, timeScale, startTime, endTime)
+        break
+      }
+
       renderResponse results
-    } 
-
-    @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def topicCount = {
-      renderResponse  statsService.getMessgesPerMinute()
-      //renderResponse statsService.getTopicCounts()
-    }
-
-    @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def queueCount = {
-      renderResponse statsService.getQueueCounts()
     }
 
     /**

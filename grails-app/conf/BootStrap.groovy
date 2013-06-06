@@ -16,21 +16,34 @@ class BootStrap {
         switch(GrailsUtil.environment){
             case "development":
                 println "#### Development Mode (Start Up)"
-                println "#### Building some test topics"
 
                 def username = 'it-msgsvcadm'
-                def queue = new Queue([name: "TestQueue"])
-                queue.addReader(username)
-                queue.addWriter(username)
-                queue.addAdmin(username)
-                queue.save(flush:true) 
+                def queueList = ['TestQueue','TestQueue2','TestQueue3','TestQueue4','TestQueue5']
+                def topicList = ['TestTopic','TestTopic2','TestTopic3','TestTopic4','TestTopic5']
+
+                queueList.each { queueName ->
+                  if (! Queue.countByName(queueName)) {
+                    println "#### Building a test queue - ${queueName}"
+                    def queue = new Queue([ name: queueName,
+                                            permissions: [  canRead:[username], 
+                                                            canWrite:[username], 
+                                                            canAdmin:[username]
+                                                          ]
+                                          ]).save(failOnError: true)
+                  }
+                }
                 
-                println "#### Building some test queues"
-                def topic = new Topic([name: "TestTopic"])
-                topic.addReader(username)
-                topic.addWriter(username)
-                topic.addAdmin(username)
-                topic.save(flush:true) 
+                topicList.each { topicName ->
+                  if (! Topic.countByName(topicName)) {
+                    println "#### Building a test topic - ${topicName}"
+                    def topic = new Topic([name: topicName])
+                    topic.addReader(username)
+                    topic.addWriter(username)
+                    topic.addAdmin(username)
+                    topic.save(flush:true)
+                  }
+                }
+                 
                 break
             case "test":
                 println "#### Test Mode (Start Up)"

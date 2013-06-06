@@ -205,9 +205,6 @@ class QueueService {
                                                             [$sort: [createTime: 1]], 
                                                             [$set: [status: "in-progress", taken: taken]]) as Message
             if (result?.id) {
-                //Update the stats on the Queue
-                Queue.collection.findAndModify(['_id': queue.id], [$inc:['stats.in-progress': 1]])
-                                Queue.collection.findAndModify(['_id': queue.id], [$inc:['stats.pending': -1]])
                 result.status = "in-progress"
                 result.taken = taken
                 log.debug("User ${username} picked up message ${result.id} from queue ${queueName}")
@@ -273,7 +270,6 @@ class QueueService {
             queueMessage.messageContainer = [type: "queue", id: queue.id, name: queue.name]
        
             if(queueMessage.save(flush:true)){
-                Queue.collection.findAndModify(['_id': queue.id], [$inc:['stats.pending': 1]])
                 log.info("Added new message ${queueMessage.id as String} to queue ${queueName} for ${username}")
                 return queueMessage.render()
             }  else {
@@ -367,11 +363,6 @@ class QueueService {
             def result = Message.collection.update([ _id : new ObjectId(messageId)],[$set: [status: messageUpdate.status, updated: updated] ])
 
             if (result) {
-
-              //Update Queue stats
-              Queue.collection.findAndModify(['_id': queue.id], [$inc:["status.${origStatus}": -1]])
-              Queue.collection.findAndModify(['_id': queue.id], [$inc:["status.${queueMessage.status}": 1]])
-
               log.info("Updated ${messageId} to status ${messageUpdate.status}")
               //redo the search and return the updated object
               queueMessage = Message.collection.findOne([ _id : new ObjectId(messageId)]) as Message
@@ -407,7 +398,6 @@ class QueueService {
             def queueMessageHash = queueMessage.render()
 
             queueMessage.delete(flush: true)
-            Queue.collection.findAndModify(['_id': queue.id], [$inc:["status.${queueMessageHash.status}": -1]])
             log.warn("Message ${messageId} deleted")
             return queueMessageHash    
         } else {

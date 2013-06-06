@@ -20,7 +20,6 @@ class StatsService {
       def statusTotals = [:]
   
       Queue.findAll().each { queue ->      
-        messageTotals[queue.name] = queue.render().stats.messages
         statusList.each { status ->
           if(! statusTotals[status]) statusTotals[status] = 0
           statusTotals[status] += queue.stats[status]

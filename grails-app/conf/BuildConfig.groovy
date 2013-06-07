@@ -28,14 +28,16 @@ grails.project.dependency.resolution = {
 
     plugins {
         compile ":mongodb:1.2.0"
-        compile ":joda-time:1.4"
-        //compile ":perf4j:0.1.1"
         compile ":spring-security-core:1.2.7.3"
         compile ":spring-security-cas-usf:1.2.0"
         compile ":spring-security-ldap:1.0.6"
 
-        test ":code-coverage:1.2.6"
-
+/*
+        compile ":resources:1.2.RC2"
+        runtime ":cached-resources:1.0"
+        runtime ":angularjs-resources:1.0.2"
+        runtime ":twitter-bootstrap:2.3.2"
+*/
         build ":tomcat:$grailsVersion"
     }
 }

@@ -38,7 +38,12 @@ class StatsController {
                 render responseText as XML
             }
             json {
+              //Handle JSONP
+              if (params.callback) {
+                render(contentType: "text/javascript", encoding: "UTF-8", text: "${params.callback}(${responseText.encodeAsJSON()})")       
+              } else {
                 render responseText as JSON
+              }
             }
         }
     }
@@ -63,6 +68,9 @@ class StatsController {
             }
         }
     }
+
+    @Secured(['ROLE_ITMESSAGESERVICEUSER'])
+    def index = {}
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
     def combinedStats = {
@@ -99,6 +107,12 @@ class StatsController {
         break
         case 'aggregateSum':
           results.messagesPerMinute = statsService.getMessagesPerMinute(null, null, auditAction, timeScale, startTime, endTime)
+        break
+        case 'aggregateTransfer':
+          results.dataTransferred = statsService.getAggregateDataTransfer(null, null, auditAction, timeScale, startTime, endTime)
+        break
+        case 'averageSize':
+          results.messageSize = statsService.getAverageMessageSize()
         break
       }
 
@@ -141,7 +155,13 @@ class StatsController {
           results.averageMessageAge = statsService.getAverageMessageAge('queue', queueName, status)
         break
         case 'aggregateSum':
-          results.messagesPerMinute = statsService.getMessagesPerMinute('QUEUE', queueName, auditAction, timeScale, startTime, endTime)
+          results.messagesPerMinute = statsService.getAggregateMessageCount('QUEUE', queueName, auditAction, timeScale, startTime, endTime)
+        break
+        case 'aggregateTransfer':
+          results.dataTransferred = statsService.getAggregateDataTransfer('QUEUE', queueName, auditAction, timeScale, startTime, endTime)
+        break
+        case 'averageSize':
+          results.messageSize = statsService.getAverageMessageSize('queue', queueName, status)
         break
       }
 
@@ -184,6 +204,12 @@ class StatsController {
         break
         case 'aggregateSum':
           results.messagesPerMinute = statsService.getMessagesPerMinute('TOPIC', topicName, auditAction, timeScale, startTime, endTime)
+        break
+        case 'aggregateTransfer':
+          results.dataTransferred = statsService.getAggregateDataTransfer('TOPIC', topicName, auditAction, timeScale, startTime, endTime)
+        break
+        case 'averageSize':
+          results.messageSize = statsService.getAverageMessageSize('topic', topicName)
         break
       }
 

@@ -235,7 +235,6 @@ class TopicService {
             if(topicMessage.save(flush:true)){
                 
                 log.info("Added new message ${topicMessage.id as String} to topic ${topicName} for ${username}")
-                Topic.collection.findAndModify(['_id': topic.id], [$inc:['messages': 1]])
                 
                 return topicMessage.render()
             }  else {
@@ -294,7 +293,6 @@ class TopicService {
             def topicMessageHash = topicMessage.render()
             
             topicMessage.delete()
-            Topic.collection.findAndModify(['_id': topic.id], [$inc:['messages': -1]])
 
             log.warn("Message ${messageId} deleted")
             return topicMessageHash    

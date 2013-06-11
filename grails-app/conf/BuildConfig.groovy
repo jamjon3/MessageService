@@ -7,12 +7,10 @@ grails.project.source.level = 1.6
 grails.project.war.file = "target/${appName}.war"
 
 grails.project.dependency.resolution = {
-    // inherit Grails' default dependencies
-    inherits("global") {
-        excludes 'ehcache'
-    }
+    inherits("global")
     log "warn" // log level of Ivy resolver, either 'error', 'warn', 'info', 'debug' or 'verbose'
     checksums true // Whether to verify checksums on resolve
+    legacyResolve true
 
     repositories {
         inherits true // Whether to inherit repository definitions from plugins

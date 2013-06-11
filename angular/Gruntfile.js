@@ -87,7 +87,6 @@ module.exports = function (grunt) {
         url: 'http://localhost:<%= connect.options.port %>'
       }
     },
-    /*
     clean: {
       dist: {
         files: [{
@@ -101,7 +100,6 @@ module.exports = function (grunt) {
       },
       server: '.tmp'
     },
-    */
     jshint: {
       options: {
         jshintrc: '.jshintrc'
@@ -144,7 +142,7 @@ module.exports = function (grunt) {
         imagesDir: '<%= yeoman.app %>/images',
         javascriptsDir: '<%= yeoman.app %>/scripts',
         fontsDir: '<%= yeoman.app %>/styles/fonts',
-        importPath: '<%= yeoman.app %>/components',
+        importPath: ['<%= yeoman.app %>/components', '<%= yeoman.app %>/components/compass-twitter-bootstrap/stylesheets'],
         relativeAssets: true
       },
       dist: {},
@@ -295,7 +293,7 @@ module.exports = function (grunt) {
   ]);
 
   grunt.registerTask('build', [
-    'clean:dist',
+  //  'clean:dist',
     'jshint',
     'test',
     'coffee',

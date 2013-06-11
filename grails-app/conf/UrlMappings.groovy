@@ -42,25 +42,25 @@ class UrlMappings {
         Stats
         **/
 
-        "/$auth/stats"(controller:"stats", parseRequest:true) {
+        "/stats"(controller:"stats", parseRequest:true) {
             action = [GET:"index", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
         }
-        "/$auth/stats/$statType"(controller:"stats", parseRequest:true) {
+        "/stats/$statType"(controller:"stats", parseRequest:true) {
             action = [GET:"combinedStats", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
         }
-        "/$auth/stats/$statType/topic"(controller:"stats", parseRequest:true) {
+        "/stats/$statType/topic"(controller:"stats", parseRequest:true) {
             action = [GET:"topicStats", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
         }
-        "/$auth/stats/$statType/topic/$name"(controller:"stats", parseRequest:true) {
+        "/stats/$statType/topic/$name"(controller:"stats", parseRequest:true) {
             action = [GET:"topicStats", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
         }
-        "/$auth/stats/$statType/queue"(controller:"stats", parseRequest:true) {
+        "/stats/$statType/queue"(controller:"stats", parseRequest:true) {
             action = [GET:"queueStats", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
         }
-        "/$auth/stats/$statType/queue/$name"(controller:"stats", parseRequest:true) {
+        "/stats/$statType/queue/$name"(controller:"stats", parseRequest:true) {
             action = [GET:"queueStats", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
         }
-        "/$auth/stats/$statType/queue/$name/$status"(controller:"stats", parseRequest:true) {
+        "/stats/$statType/queue/$name/$status"(controller:"stats", parseRequest:true) {
             action = [GET:"queueStats", PUT:"requestError", DELETE:"requestError", POST:"requestError"]
         }           
         

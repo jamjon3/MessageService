@@ -108,8 +108,8 @@ environments {
 
 grails.plugins.springsecurity.userLookup.userDomainClassName = 'edu.usf.cims.UsfCasUser'
 grails.plugins.springsecurity.securityConfigType = "Annotation"
-grails.plugins.springsecurity.sessionFixationPrevention.alwaysCreateSession = false
-grails.plugins.springsecurity.requestCache.createSession = false
+grails.plugins.springsecurity.sessionFixationPrevention.alwaysCreateSession = true
+grails.plugins.springsecurity.requestCache.createSession = true
 
 grails.plugins.springsecurity.cas.active = true
 grails.plugins.springsecurity.cas.sendRenew = false
@@ -150,12 +150,9 @@ grails.plugins.springsecurity.useBasicAuth = true
 grails.plugins.springsecurity.basic.realmName = "Message Service REST API"
 
 /*
-  Enable HTTP-BASIC for /basic/* URLs and CAS for /cas URLs
+  Enable HTTP-BASIC for /basic/* URLs and CAS everything else
 */  
 grails.plugins.springsecurity.filterChain.chainMap = [
   '/basic/**': 'JOINED_FILTERS,-casAuthenticationFilter,-exceptionTranslationFilter',
-  '/cas/**': 'JOINED_FILTERS,-basicAuthenticationFilter,-basicExceptionTranslationFilter',
-  '/stats/**': 'JOINED_FILTERS,-basicAuthenticationFilter,-basicExceptionTranslationFilter'
+  '/**': 'JOINED_FILTERS,-basicAuthenticationFilter,-basicExceptionTranslationFilter'
 ]
-
-grails.plugins.springsecurity.controllerAnnotations.staticRules = [ '/**': ['ROLE_ITPRSUPERVISOR'] ]

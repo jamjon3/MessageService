@@ -61,13 +61,23 @@ class StatsService {
     }
 
     def countAllMessages(){
-      def results = [topic:0, queue:0]
+      def results = [
+                      cols:[
+                          [id:"type", label:"Container Type", type:"string"],
+                          [id:"msg", label:"Messages", type:"number"]],
+                      rows:[ 
+                        [c:
+                          [[v:"Queue"],[v:0]]],
+                        [c:
+                          [[v:"Topic"],[v:0]]]
+                      ]
+                    ]
 
       getAllQueueCounts().each { name, queueStats ->
-        results.queue += queueStats.messages
+        results.rows[0].c[1].v += queueStats.messages
       }
       getAllTopicCounts().each { name, value ->
-        results.topic += value
+        results.rows[1].c[1].v += value
       }
 
       return results
@@ -78,10 +88,11 @@ class StatsService {
 
       def result = Message.collection.find(searchParams).sort(createTime: sortType).limit(1) as Message
 
-      def resultMap = [messageId:'none', messageDetails:'No messages found!', createTime: 0, age: null]
+      def resultMap = [messageId:'none', messageType:'none', container:'none', createTime: 0, age: null]
       if (result){
         resultMap.messageId = result.render().id
-        resultMap.messageDetails = result.render().messageDetails
+        resultMap.messageType = result.render().messageDetails.messageContainer.type
+        resultMap.container = result.render().messageDetails.messageContainer.name
         resultMap.createTime = result.render().createTime
         resultMap.age = TimeCategory.minus( new Date(), result.createTime ) as String
       }
@@ -146,55 +157,77 @@ class StatsService {
     }
 
 
-    def getAggregateMessageCount(containerType, actionType, timeScale, startTime, endTime){
-      return getAggregateMessageCount(containerType, null, actionType, timeScale, startTime, endTime)
+    def getAggregateMessageCount(containerType, timeScale, startTime, endTime){
+      return getAggregateMessageCount(containerType, null, timeScale, startTime, endTime)
     }
     
-    def getAggregateMessageCount(containerType, containerName, actionType, timeScale, startTime, endTime){
-       def searchParams = [ action: actionType,
-                            auditTime : [ $gte : startTime, $lt : endTime ]
-                          ]
+    def getAggregateMessageCount(containerType, containerName, timeScale, startTime, endTime){
+       def searchParams = [  auditTime : [ $gte : startTime, $lt : endTime ] ]
         if(containerType) searchParams.containerType = containerType
         if(containerName) searchParams.containerName = containerName              
 
        def groupParams = getGroupParams(['a': '$action'], timeScale)
 
-       def result = AuditEntry.collection.aggregate(
+       def rawResult = AuditEntry.collection.aggregate(
           [$match: searchParams ],
           [$project:  ['action' : 1,
                       'datetime':[
-                                    'y': ['$year' : '$auditTime'],
-                                    'm': ['$month' : '$auditTime'],
-                                    'd': ['$dayOfMonth' : '$auditTime'],
-                                    'h': ['$hour' : '$auditTime'],
-                                    'min': ['$minute' : '$auditTime'],
-                                    'sec': ['$second' : '$auditTime']
-                                    ]
+                          'y': ['$year' : '$auditTime'],
+                          'm': ['$month' : '$auditTime'],
+                          'd': ['$dayOfMonth' : '$auditTime'],
+                          'h': ['$hour' : '$auditTime'],
+                          'min': ['$minute' : '$auditTime'],
+                          'sec': ['$second' : '$auditTime']
+                          ]
                       ]
           ],
           [$group:  ['_id': groupParams,
                       'count' : [ $sum : 1 ]
                     ]
-          ]
+          ],
+          [$sort: ['_id': 1]]
         )
 
-       return result?.commandResult?.result
+       def results = [
+                      cols:[
+                          [id:"a", label:"Time", type:"datetime"],
+                          [id:"b", label:"Viewed", type:"number"],
+                          [id:"c", label:"Written", type:"number"],
+                          [id:"d", label:"Deleted", type:"number"]],
+                      rows:[]
+                    ]
+
+        def data = [:]
+
+        //Loop through the results from mongo and consolidate them into a single line per time period
+        rawResult?.commandResult?.result.each {
+          def date = getDateFromMongoData(timeScale, it._id)
+
+          if (! data."${date}") data."${date}" = [date:date, view:0, create:0, delete:0]
+          if (it._id.a == 'CREATE_MESSAGE') data."${date}".create = it.count
+          if (it._id.a == 'VIEW_MESSAGE') data."${date}".view = it.count
+          if (it._id.a == 'DELETE_MESSAGE') data."${date}".view = it.count
+        }
+
+        data.each { key,value ->
+          results.rows.add([c:[[v: value.date],[v: value.view],[v: value.create],[v: value.delete]]])
+        }
+
+       return results
      }
 
-    def getAggregateDataTransfer(containerType, actionType, timeScale, startTime, endTime){
-      return getAggregateDataTransfer(containerType, null, actionType, timeScale, startTime, endTime)
+    def getAggregateDataTransfer(containerType, timeScale, startTime, endTime){
+      return getAggregateDataTransfer(containerType, null, timeScale, startTime, endTime)
     }
     
-    def getAggregateDataTransfer(containerType, containerName, actionType, timeScale, startTime, endTime){
-       def searchParams = [ action: actionType,
-                            auditTime : [ $gte : startTime, $lt : endTime ]
-                          ]
+    def getAggregateDataTransfer(containerType, containerName, timeScale, startTime, endTime){
+       def searchParams = [ auditTime : [ $gte : startTime, $lt : endTime ] ]
         if(containerType) searchParams.containerType = containerType
         if(containerName) searchParams.containerName = containerName              
 
        def groupParams = getGroupParams(['a': '$action'], timeScale)
 
-       def result = AuditEntry.collection.aggregate(
+       def rawResult = AuditEntry.collection.aggregate(
           [$match: searchParams ],
           [$project:  ['action' : 1,
                        'dataTransfer' : '$details.messageSize',
@@ -215,7 +248,20 @@ class StatsService {
           ]
         )
 
-       return result?.commandResult?.result
+        def results = [
+                      cols:[
+                          [id:"a", label:"Time", type:"datetime"],
+                          [id:"b", label:"Bytes Transferred", type:"number"]],
+                      rows:[]
+                    ]
+
+        //Loop through the results from mongo and add them to the Google Charts object
+        rawResult?.commandResult?.result.each {
+          def date = getDateFromMongoData(timeScale, it._id)
+          results.rows.add([c:[[v: date],[v: it.bytesTransferred]]])
+        }
+
+       return results
      }
 
       def getAverageMessageSize(containerType = null, containerName = null, status = null){
@@ -318,6 +364,33 @@ class StatsService {
           
         }
         return groupParams.plus(params)
+    }
+
+    private def getDateFromMongoData(timeScale, data){
+       def params = [:]
+
+        switch(timeScale) {
+          case 'year':
+            params = [year: data.y, month: 0, day: 0, hour: 0, minute: 0, second: 0]
+          break
+          case 'month':
+            params = [year: data.y, month: data.m - 1, day: 0, hour: 0, minute: 0, second: 0]
+          break
+          case 'day':
+            params = [year: data.y, month: data.m - 1, day: data.d, hour: 0, minute: 0, second: 0]
+          break
+          case 'hour':
+            params = [year: data.y, month: data.m - 1, day: data.d, hour: data.h, minute: 0, second: 0]
+          break
+          case 'minute':
+            params = [year: data.y, month: data.m - 1, day: data.d, hour: data.h, minute: data.min, second: 0]
+          break
+          case 'second':
+            params = [year: data.y, month: data.m - 1, day: data.d, hour: data.h, minute: data.min, second: data.sec]
+          break
+          
+        }
+        return  "Date(${params.year}, ${params.month}, ${params.day}, ${params.hour}, ${params.minute}, ${params.second})"
     }
 
     private def convertToTimeDuration(input){

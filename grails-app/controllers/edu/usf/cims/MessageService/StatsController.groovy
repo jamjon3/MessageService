@@ -31,7 +31,12 @@ class StatsController {
                 if (params.return?.toUpperCase() == 'XML'){
                     render responseText as XML
                 }else{
+                  //Handle JSONP
+                  if (params.callback) {
+                    render(contentType: "text/javascript", encoding: "UTF-8", text: "${params.callback}(${responseText.encodeAsJSON()})")       
+                  } else {
                     render responseText as JSON
+                  }
                 }
             }
             xml {
@@ -89,27 +94,36 @@ class StatsController {
       }
 
       def timeScale = params.timeScale ?: "hour"
-      def auditAction = params.auditAction ?: "VIEW_MESSAGE"
       def statType = params.statType ?: 'count'
 
       def results = [:]
+      results.timeScale = timeScale
 
       switch(statType) {
+        case 'dashboard':  
+          results.count = statsService.countAllMessages()
+          results.oldestMessageData = statsService.getMessageByAge(null, null, null, 1)
+          results.newestMessageData = statsService.getMessageByAge(null, null, null, -1)
+          results.averageMessageAge = statsService.getAverageMessageAge()
+          results.messagesPer = statsService.getAggregateMessageCount(null, null, timeScale, startTime, endTime)
+          results.dataTransferred = statsService.getAggregateDataTransfer(null, null, timeScale, startTime, endTime)
+          results.messageSize = statsService.getAverageMessageSize()
+        break
         case 'count':
           results.count = statsService.countAllMessages()
         break
-        case 'ageMaxMin':
+        case 'ageMinMax':
           results.oldestMessageData = statsService.getMessageByAge(null, null, null, 1)
           results.newestMessageData = statsService.getMessageByAge(null, null, null, -1)
         break
         case 'averageAge':
           results.averageMessageAge = statsService.getAverageMessageAge()
         break
-        case 'aggregateSum':
-          results.messagesPerMinute = statsService.getMessagesPerMinute(null, null, auditAction, timeScale, startTime, endTime)
+        case 'aggregateCount':
+          results.messagesPer = statsService.getAggregateMessageCount(null, null, timeScale, startTime, endTime)
         break
         case 'aggregateTransfer':
-          results.dataTransferred = statsService.getAggregateDataTransfer(null, null, auditAction, timeScale, startTime, endTime)
+          results.dataTransferred = statsService.getAggregateDataTransfer(null, null, timeScale, startTime, endTime)
         break
         case 'averageSize':
           results.messageSize = statsService.getAverageMessageSize()
@@ -136,7 +150,6 @@ class StatsController {
       }
 
       def timeScale = params.timeScale ?: "hour"
-      def auditAction = params.auditAction ?: "VIEW_MESSAGE"
       def queueName = params.name ?: null
       def statType = params.statType ?: 'count'
       def status = params.status ?: null
@@ -155,10 +168,10 @@ class StatsController {
           results.averageMessageAge = statsService.getAverageMessageAge('queue', queueName, status)
         break
         case 'aggregateSum':
-          results.messagesPerMinute = statsService.getAggregateMessageCount('QUEUE', queueName, auditAction, timeScale, startTime, endTime)
+          results.messagesPerMinute = statsService.getAggregateMessageCount('QUEUE', queueName, timeScale, startTime, endTime)
         break
         case 'aggregateTransfer':
-          results.dataTransferred = statsService.getAggregateDataTransfer('QUEUE', queueName, auditAction, timeScale, startTime, endTime)
+          results.dataTransferred = statsService.getAggregateDataTransfer('QUEUE', queueName, timeScale, startTime, endTime)
         break
         case 'averageSize':
           results.messageSize = statsService.getAverageMessageSize('queue', queueName, status)
@@ -184,8 +197,7 @@ class StatsController {
         return
       }
 
-      def timeScale = params.timeScale ?: "hour"
-      def auditAction = params.auditAction ?: "VIEW_MESSAGE"
+      def timeScale = params.timeScale ?: 'hour'
       def topicName = params.name ?: null
       def statType = params.statType ?: 'count'
 
@@ -203,10 +215,10 @@ class StatsController {
           results.averageMessageAge = statsService.getAverageMessageAge('topic', topicName)
         break
         case 'aggregateSum':
-          results.messagesPerMinute = statsService.getMessagesPerMinute('TOPIC', topicName, auditAction, timeScale, startTime, endTime)
+          results.messagesPerMinute = statsService.getMessagesPerMinute('TOPIC', topicName, timeScale, startTime, endTime)
         break
         case 'aggregateTransfer':
-          results.dataTransferred = statsService.getAggregateDataTransfer('TOPIC', topicName, auditAction, timeScale, startTime, endTime)
+          results.dataTransferred = statsService.getAggregateDataTransfer('TOPIC', topicName, timeScale, startTime, endTime)
         break
         case 'averageSize':
           results.messageSize = statsService.getAverageMessageSize('topic', topicName)

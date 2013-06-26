@@ -32,20 +32,29 @@ class TopicController {
     }
 
     def renderResponse (responseText) {
-        response.status = 200
         withFormat {
             html {
                 if (params.return?.toUpperCase() == 'XML'){
                     render responseText as XML
                 }else{
+                  //Handle JSONP
+                  if (params.callback) {
+                    render(contentType: "text/javascript", encoding: "UTF-8", text: "${params.callback}(${responseText.encodeAsJSON()})")       
+                  } else {
                     render responseText as JSON
+                  }
                 }
             }
             xml {
                 render responseText as XML
             }
             json {
+              //Handle JSONP
+              if (params.callback) {
+                render(contentType: "text/javascript", encoding: "UTF-8", text: "${params.callback}(${responseText.encodeAsJSON()})")       
+              } else {
                 render responseText as JSON
+              }
             }
         }
     }
@@ -66,7 +75,12 @@ class TopicController {
                 render errorText as XML
             }
             json {
-                render errorText as JSON
+              //Handle JSONP
+              if (params.callback) {
+                render(contentType: "text/javascript", encoding: "UTF-8", text: "${params.callback}(${responseText.encodeAsJSON()})")       
+              } else {
+                render responseText as JSON
+              }
             }
         }
     }

@@ -41,16 +41,4 @@
 
 # other
 *.iws
-*.log
-
-# Yeoman - AngularJS
-node_modules
-dist
-.tmp
-.sass-cache
-angular/app/components
-
-web-app/components
-web-app/scripts
-web-app/styles
-web-app/views
+*.logs

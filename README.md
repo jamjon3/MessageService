@@ -17,3 +17,4 @@ I know. Why re-invent the wheel, right?  I think this adds some features that ot
 * Supports both Topics and Queues
 * Supports CAS and HTTP-BASIC authentication
 * MongoDB-based message persistence
+=======

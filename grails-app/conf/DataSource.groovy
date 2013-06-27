@@ -1,3 +1,4 @@
+/*
 grails {
     mongo {
         host = "localhost"
@@ -8,4 +9,5 @@ grails {
             connectTimeout = 300
         }
     }
-}        
+}
+*/

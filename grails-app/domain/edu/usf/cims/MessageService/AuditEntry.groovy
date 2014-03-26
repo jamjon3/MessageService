@@ -63,5 +63,5 @@ class AuditEntry {
         action index:true
         containerName index:true
         containerType index:true
-    }    
+    }
 }

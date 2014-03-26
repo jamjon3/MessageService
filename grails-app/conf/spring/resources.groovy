@@ -8,4 +8,3 @@ beans = {
    }
    messageContainerType(MessageContainerType)
 }
-

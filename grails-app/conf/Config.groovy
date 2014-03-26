@@ -85,7 +85,7 @@ log4j = { root ->
           'org.codehaus.groovy.grails.orm.hibernate', // hibernate integration
           'org.springframework',
           'groovyx.net.http.ParserRegistry'
-    
+
     info 'grails.app'
 
     debug 'edu.usf'
@@ -96,13 +96,13 @@ log4j = { root ->
 
 environments {
     development {
- 
+
     }
     test {
-      grails.plugins.springsecurity.active = false                  
+      grails.plugins.springsecurity.active = false
     }
     production {
-         
+
     }
 }
 
@@ -127,7 +127,7 @@ grails.plugins.springsecurity.cas.authorityAttribute = 'eduPersonEntitlement'
 //Update these for your environment
 grails.plugins.springsecurity.cas.serverUrlPrefix = 'https://authtest.it.usf.edu'
 grails.plugins.springsecurity.cas.serviceUrl = 'http://localhost:8080/MessageService/j_spring_cas_security_check'
-grails.plugins.springsecurity.cas.proxyCallbackUrl = 'http://localhost:8080/MessageService/secure/receptor'        
+grails.plugins.springsecurity.cas.proxyCallbackUrl = 'http://localhost:8080/MessageService/secure/receptor'
 grails.plugins.springsecurity.ldap.context.managerDn = ''
 grails.plugins.springsecurity.ldap.context.managerPassword = ''
 grails.plugins.springsecurity.ldap.context.server = ''
@@ -151,7 +151,7 @@ grails.plugins.springsecurity.basic.realmName = "Message Service REST API"
 
 /*
   Enable HTTP-BASIC for /basic/* URLs and CAS everything else
-*/  
+*/
 grails.plugins.springsecurity.filterChain.chainMap = [
   '/basic/**': 'JOINED_FILTERS,-casAuthenticationFilter,-exceptionTranslationFilter',
   '/**': 'JOINED_FILTERS,-basicAuthenticationFilter,-basicExceptionTranslationFilter'

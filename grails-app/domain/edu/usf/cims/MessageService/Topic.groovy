@@ -8,19 +8,19 @@ class Topic {
     Map permissions = [ canRead:['it-msgsvcadm'], canWrite:['it-msgsvcadm'], canAdmin:['it-msgsvcadm'] ]
 
     static constraints = {
-        name(   
+        name(
                 unique: true,
                 blank: false,
                 nullable: false,
                 size: 3..255,
                 //Custom constraint - only allow upper, lower, digits, dash and underscore
                 validator: { val, obj -> val ==~ /[A-Za-z0-9_-]+/ }
-            )       
+            )
     }
     static mapping = {}
 
-    
-    def render() { 
+
+    def render() {
       [ name: name ]
     }
 
@@ -63,7 +63,7 @@ class Topic {
     def removeReader(username){
         if((username != 'it-msgsrvadm')&&(canRead(username))){
             permissions.canRead.remove(username)
-        } 
+        }
     }
 
     def removeWriter(username){

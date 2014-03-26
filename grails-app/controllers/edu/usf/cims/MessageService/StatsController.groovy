@@ -16,13 +16,13 @@ class StatsController {
                     message = request.JSON
                 }
                 xml {
-                    message = request.XML 
+                    message = request.XML
                 }
                 json {
                     message = request.JSON
                 }
             }
-        } 
+        }
     }
 
     def renderResponse (responseText) {
@@ -33,7 +33,7 @@ class StatsController {
                 }else{
                   //Handle JSONP
                   if (params.callback) {
-                    render(contentType: "text/javascript", encoding: "UTF-8", text: "${params.callback}(${responseText.encodeAsJSON()})")       
+                    render(contentType: "text/javascript", encoding: "UTF-8", text: "${params.callback}(${responseText.encodeAsJSON()})")
                   } else {
                     render responseText as JSON
                   }
@@ -45,7 +45,7 @@ class StatsController {
             json {
               //Handle JSONP
               if (params.callback) {
-                render(contentType: "text/javascript", encoding: "UTF-8", text: "${params.callback}(${responseText.encodeAsJSON()})")       
+                render(contentType: "text/javascript", encoding: "UTF-8", text: "${params.callback}(${responseText.encodeAsJSON()})")
               } else {
                 render responseText as JSON
               }
@@ -83,7 +83,7 @@ class StatsController {
       def startTime = new Date() - 1
       // Now
       def endTime = new Date()
-      
+
       try {
         if (params.startTime) startTime = new Date().parse("yyyy-MM-dd'T'HH:mm:ssz", "${params.startTime}-0000")
         if (params.endTime) endTime = new Date().parse("yyyy-MM-dd'T'HH:mm:ssz", "${params.endTime}-0000")
@@ -100,7 +100,7 @@ class StatsController {
       results.timeScale = timeScale
 
       switch(statType) {
-        case 'dashboard':  
+        case 'dashboard':
           results.count = statsService.countAllMessages()
           results.oldestMessageData = statsService.getMessageByAge(null, null, null, 1)
           results.newestMessageData = statsService.getMessageByAge(null, null, null, -1)
@@ -139,7 +139,7 @@ class StatsController {
       def startTime = new Date() - 1
       // Now
       def endTime = new Date()
-      
+
       try {
         if (params.startTime) startTime = new Date().parse("yyyy-MM-dd'T'HH:mm:ssz", "${params.startTime}-0000")
         if (params.endTime) endTime = new Date().parse("yyyy-MM-dd'T'HH:mm:ssz", "${params.endTime}-0000")
@@ -187,7 +187,7 @@ class StatsController {
       def startTime = new Date() - 1
       // Now
       def endTime = new Date()
-      
+
       try {
         if (params.startTime) startTime = new Date().parse("yyyy-MM-dd'T'HH:mm:ssz", "${params.startTime}-0000")
         if (params.endTime) endTime = new Date().parse("yyyy-MM-dd'T'HH:mm:ssz", "${params.endTime}-0000")

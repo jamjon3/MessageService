@@ -13,11 +13,11 @@ class TopicControllerTests extends GroovyTestCase {
     void setup() {
         //This runs before each test
         def topic = new Topic([name: "TestTopic1"])
-        topic.save(flush:true) 
+        topic.save(flush:true)
 
         def topic2 = new Topic([name: "TestTopic2"])
         topic2.save(flush:true)
-        
+
         new Topic([name: "TestTopic3"]).save(flush:true)
         new Topic([name: "netidChange"]).save(flush:true)
 
@@ -29,7 +29,7 @@ class TopicControllerTests extends GroovyTestCase {
     }
 
     @After
-    void tearDown() {       
+    void tearDown() {
         //This runs after each test
         //Remove data from test database
         Topic.collection.drop()
@@ -37,16 +37,16 @@ class TopicControllerTests extends GroovyTestCase {
     }
 
     @Test
-    void testListTopics() {    
+    void testListTopics() {
         def controller = new TopicController()
         controller.topicService = topicService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
-        
+
         controller.request.method = "GET"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
-        
+
         controller.listTopics()
         assert controller.response.status == 200
         assert controller.response.contentAsString == '{"count":4,"topics":[{"name":"TestTopic1","stats":{"messages":0}},{"name":"TestTopic2","stats":{"messages":0}},{"name":"TestTopic3","stats":{"messages":0}},{"name":"netidChange","stats":{"messages":0}}]}'
@@ -65,10 +65,10 @@ class TopicControllerTests extends GroovyTestCase {
         controller.params.return = "XML"
         controller.params.pattern = "^(netid).*"
         controller.request.method = "GET"
-        
+
         controller.listTopics()
         assert controller.response.status == 200
-        
+
         assert controller.response.contentAsString =~ /<\?xml version="1.0" encoding="UTF-8"\?><map><entry key="count">1<\/entry><entry key="topics"><map><entry key="name">netidChange<\/entry><entry key="stats"><entry key="messages">0<\/entry><\/entry><\/map><\/entry><\/map>/
     }
 
@@ -86,7 +86,7 @@ class TopicControllerTests extends GroovyTestCase {
         controller.request.content = '{"messageData": {"name": "newTopic"} }'
 
         controller.createTopic()
-        
+
         assert controller.response.status == 200
         assert controller.response.contentAsString == '{"count":1,"topics":{"name":"newTopic","stats":{"messages":0}}}'
     }
@@ -186,7 +186,7 @@ class TopicControllerTests extends GroovyTestCase {
         controller.topicService = topicService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
-        
+
         controller.request.method = "PUT"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
@@ -204,7 +204,7 @@ class TopicControllerTests extends GroovyTestCase {
         controller.topicService = topicService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("test-user")
-        
+
         controller.request.method = "PUT"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
@@ -222,13 +222,13 @@ class TopicControllerTests extends GroovyTestCase {
         controller.topicService = topicService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
-        
+
         controller.request.method = "PUT"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
         controller.params.name = "TestTopic1"
         controller.request.content = '{"messageData":{"permissions":{"canRead":{"add":["epierce","chance"],"remove":[]},"canWrite":{"add":["chance"],"remove":[]},"canAdmin":{"add":["epierce"],"remove":[]}}}}'
-        
+
         controller.modifyTopic()
         assert controller.response.status == 200
         assert controller.response.contentAsString == '{"canRead":{"add":2,"remove":0},"canWrite":{"add":1,"remove":0},"canAdmin":{"add":1,"remove":0}}'
@@ -240,13 +240,13 @@ class TopicControllerTests extends GroovyTestCase {
         controller.topicService = topicService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
-        
+
         controller.request.method = "PUT"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
         controller.params.name = "TestTopic11"
         controller.request.content = '{"messageData":{"permissions":{"canRead":{"add":["epierce","chance"],"remove":[]},"canWrite":{"add":["chance"],"remove":[]},"canAdmin":{"add":["epierce"],"remove":[]}}}}'
-        
+
         controller.modifyTopic()
         assert controller.response.status == 404
         assert controller.response.contentAsString == '{"error":"Update failed: TestTopic11 does not exist"}'
@@ -258,13 +258,13 @@ class TopicControllerTests extends GroovyTestCase {
         controller.topicService = topicService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
-        
+
         controller.request.method = "PUT"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
         controller.params.name = "TestTopic1"
         controller.request.content = '{"messageData":{}}'
-        
+
         controller.modifyTopic()
         assert controller.response.status == 400
         assert controller.response.contentAsString == '{"error":"Message data required"}'
@@ -276,13 +276,13 @@ class TopicControllerTests extends GroovyTestCase {
         controller.topicService = topicService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("test-user")
-        
+
         controller.request.method = "PUT"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
         controller.params.name = "TestTopic1"
         controller.request.content = '{"messageData":{"permissions":{"canRead":{"add":["epierce","chance"],"remove":[]},"canWrite":{"add":["chance"],"remove":[]},"canAdmin":{"add":["epierce"],"remove":[]}}}}'
-        
+
         controller.modifyTopic()
         assert controller.response.status == 403
         assert controller.response.contentAsString == '{"error":"You are not authorized to perform this operation"}'
@@ -328,7 +328,7 @@ class TopicControllerTests extends GroovyTestCase {
         controller.topicService = topicService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("test-user")
-        
+
         controller.request.method = "DELETE"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
@@ -345,12 +345,12 @@ class TopicControllerTests extends GroovyTestCase {
         controller.topicService = topicService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
- 
+
         controller.params.name = "TestTopic1"
         controller.request.method = "GET"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
- 
+
         controller.listTopicMessages()
         assert controller.response.status == 200
         assert controller.response.contentAsString =~ /.*message1.*message2.*message3.*/
@@ -362,12 +362,12 @@ class TopicControllerTests extends GroovyTestCase {
         controller.topicService = topicService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
- 
+
         controller.params.name = "TestTopic11"
         controller.request.method = "GET"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
- 
+
         controller.listTopicMessages()
         assert controller.response.status == 404
         assert controller.response.contentAsString == '{"error":"ResourceNotFound: TestTopic11 does not exist"}'
@@ -379,12 +379,12 @@ class TopicControllerTests extends GroovyTestCase {
         controller.topicService = topicService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("test-user")
- 
+
         controller.params.name = "TestTopic1"
         controller.request.method = "GET"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
- 
+
         controller.listTopicMessages()
         assert controller.response.status == 403
         assert controller.response.contentAsString == '{"error":"You are not authorized to perform this operation"}'
@@ -402,7 +402,7 @@ class TopicControllerTests extends GroovyTestCase {
         controller.request.method = "GET"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
- 
+
         controller.filterTopicMessages()
         assert controller.response.status == 200
         assert controller.response.contentAsString =~ /.*message2.*message3.*/
@@ -421,7 +421,7 @@ class TopicControllerTests extends GroovyTestCase {
         controller.request.method = "GET"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
- 
+
         controller.filterTopicMessages()
         assert controller.response.status == 200
         assert controller.response.contentAsString =~ /.*message2.*/
@@ -439,7 +439,7 @@ class TopicControllerTests extends GroovyTestCase {
         controller.request.method = "GET"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
- 
+
         controller.filterTopicMessages()
         assert controller.response.status == 200
         assert controller.response.contentAsString == '{"count":0,"messages":[]}'
@@ -457,9 +457,9 @@ class TopicControllerTests extends GroovyTestCase {
         controller.request.method = "GET"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
- 
+
         controller.filterTopicMessages()
-        assert controller.response.status == 400       
+        assert controller.response.status == 400
     }
 
   @Test
@@ -475,13 +475,13 @@ class TopicControllerTests extends GroovyTestCase {
         controller.request.method = "GET"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
- 
+
         controller.filterTopicMessages()
         //the JSON data contains escaped double quotes, so we have to escape the escape characters
         def dateErrorMessage = '{"error":"Unparseable date. Dates must be in the format yyyy-MM-dd\'T\'HH:mm:ss (GMT)"}'
         assert controller.response.contentAsString == dateErrorMessage
     }
-    
+
   @Test
     void testListTopicMessagesFilteredNotFound() {
         def controller = new TopicController()
@@ -494,10 +494,10 @@ class TopicControllerTests extends GroovyTestCase {
         controller.request.method = "GET"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
- 
+
         controller.filterTopicMessages()
         assert controller.response.status == 404
-        assert controller.response.contentAsString == '{"error":"ResourceNotFound: TestTopic11 does not exist"}'       
+        assert controller.response.contentAsString == '{"error":"ResourceNotFound: TestTopic11 does not exist"}'
     }
 
   @Test
@@ -512,10 +512,10 @@ class TopicControllerTests extends GroovyTestCase {
         controller.request.method = "GET"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
- 
+
         controller.filterTopicMessages()
         assert controller.response.status == 403
-        assert controller.response.contentAsString == '{"error":"You are not authorized to perform this operation"}'       
+        assert controller.response.contentAsString == '{"error":"You are not authorized to perform this operation"}'
     }
 
 @Test
@@ -577,7 +577,7 @@ class TopicControllerTests extends GroovyTestCase {
         controller.topicService = topicService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
-        
+
         controller.request.method = "POST"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
@@ -646,7 +646,7 @@ class TopicControllerTests extends GroovyTestCase {
 
         controller.viewMessage()
         assert controller.response.status == 200
-        assert controller.response.contentAsString =~ /.*messageDetails.*TestTopic4.*TopicServiceTests.*message5.*/          
+        assert controller.response.contentAsString =~ /.*messageDetails.*TestTopic4.*TopicServiceTests.*message5.*/
     }
 
   @Test
@@ -715,7 +715,7 @@ class TopicControllerTests extends GroovyTestCase {
 
         def message = new Message([creator: "it-msgsvcadm", apiVersion: 1,createProg: "TopicServiceTests",messageData:[data: "message5"],messageContainer:new MessageContainer([type:"topic",id:topic.id,name:topic.name])])
         message.save(flush:true)
-        
+
         def controller = new TopicController()
         controller.topicService = topicService
         controller.springSecurityService = stubSpringSecurityService
@@ -723,7 +723,7 @@ class TopicControllerTests extends GroovyTestCase {
 
         controller.request.method = "GET"
         controller.params.name = "TestTopic4"
-        controller.params.id = message.id as String 
+        controller.params.id = message.id as String
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
 
@@ -751,10 +751,10 @@ class TopicControllerTests extends GroovyTestCase {
         controller.params.message = '{"createProg":"controllerTestChanged","messageData":{"name":"messageChanged"}}'
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
-        
+
         controller.modifyMessage()
         assert controller.response.status == 200
-        assert controller.response.contentAsString =~ /.*${message.id as String}.*controllerTestChanged.*messageChanged.* /         
+        assert controller.response.contentAsString =~ /.*${message.id as String}.*controllerTestChanged.*messageChanged.* /
     }
 
   @Test
@@ -769,7 +769,7 @@ class TopicControllerTests extends GroovyTestCase {
         controller.request.content = '{"createProg":"controllerTestChanged","messageData":{"name":"messageChanged"}}'
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
-        
+
         controller.modifyMessage()
         assert controller.response.status == 404
         assert controller.response.contentAsString == '{"error":"Message does not exist"}'
@@ -788,14 +788,14 @@ class TopicControllerTests extends GroovyTestCase {
         controller.params.name = "TestTopic6"
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
-        
+
         controller.params.id = message.id as String
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
-        
+
         controller.modifyMessage()
         assert controller.response.status == 400
-        assert controller.response.contentAsString == '{"error":"MissingRequiredQueryParameter: Message data required"}'         
+        assert controller.response.contentAsString == '{"error":"MissingRequiredQueryParameter: Message data required"}'
     }
 
   @Test
@@ -816,10 +816,10 @@ class TopicControllerTests extends GroovyTestCase {
         controller.request.content = '{"createProg":"controllerTestChanged","messageData":{"name""messageChanged"}}'
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
-        
+
         controller.modifyMessage()
         assert controller.response.status == 400
-        assert controller.response.contentAsString == '{"error":"Message data is invalid"}'         
+        assert controller.response.contentAsString == '{"error":"Message data is invalid"}'
     }
 
   @Test
@@ -840,7 +840,7 @@ class TopicControllerTests extends GroovyTestCase {
         controller.request.content = '{"createProg":"testProg","messageData":{"netid":"epierce"}}'
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
-        
+
         controller.modifyMessage()
         assert controller.response.status == 403
         assert controller.response.contentAsString == '{"error":"You are not authorized to perform this operation"}'
@@ -855,7 +855,7 @@ class TopicControllerTests extends GroovyTestCase {
         message.save(flush:true)
 
         def controller = new TopicController()
-        controller.topicService = topicService  
+        controller.topicService = topicService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
 
@@ -864,10 +864,10 @@ class TopicControllerTests extends GroovyTestCase {
         controller.request.content = '{"createProg":"testProg","messageData":{"netid":"epierce"}}'
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
-        
+
         controller.modifyMessage()
         assert controller.response.status == 400
-        assert controller.response.contentAsString == '{"error":"Requested message does not belong to requested topic"}'         
+        assert controller.response.contentAsString == '{"error":"Requested message does not belong to requested topic"}'
     }
 
   @Test
@@ -888,10 +888,10 @@ class TopicControllerTests extends GroovyTestCase {
         controller.request.content = '{"createProg":"testProg","messageData":{"netid":"epierce"}}'
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
-        
+
         controller.modifyMessage()
         assert controller.response.status == 404
-        assert controller.response.contentAsString == '{"error":"Topic does not exist"}'       
+        assert controller.response.contentAsString == '{"error":"Topic does not exist"}'
     }
 */
 
@@ -908,7 +908,7 @@ class TopicControllerTests extends GroovyTestCase {
         controller.topicService = topicService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
-        
+
         controller.request.method = "DELETE"
         controller.params.name = "TestTopic9"
         controller.params.id = message.id as String
@@ -917,7 +917,7 @@ class TopicControllerTests extends GroovyTestCase {
 
         controller.deleteMessage()
         assert controller.response.status == 200
-        assert controller.response.contentAsString =~ /.*messageDetails.*TestTopic9.*TopicServiceTests.*message1.*/          
+        assert controller.response.contentAsString =~ /.*messageDetails.*TestTopic9.*TopicServiceTests.*message1.*/
     }
 
  @Test
@@ -932,7 +932,7 @@ class TopicControllerTests extends GroovyTestCase {
         controller.topicService = topicService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("test-user")
-        
+
         controller.request.method = "DELETE"
         controller.params.name = "TestTopic9"
         controller.params.id = message.id as String
@@ -941,7 +941,7 @@ class TopicControllerTests extends GroovyTestCase {
 
         controller.deleteMessage()
         assert controller.response.status == 403
-        assert controller.response.contentAsString == '{"error":"You are not authorized to perform this operation"}'        
+        assert controller.response.contentAsString == '{"error":"You are not authorized to perform this operation"}'
     }
 
   @Test
@@ -978,5 +978,5 @@ class TopicControllerTests extends GroovyTestCase {
         controller.deleteMessage()
         assert controller.response.status == 404
         assert controller.response.contentAsString == '{"error":"Topic does not exist"}'
-    }    
+    }
 }

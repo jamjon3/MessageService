@@ -11,6 +11,5 @@ package edu.usf.cims.MessageService
  * @author james
  */
 class StatsAppender /* extends AppenderSkeleton */ {
-	
-}
 
+}

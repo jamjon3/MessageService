@@ -10,11 +10,11 @@ class TopicServiceTests {
     void setup() {
         //This runs before each test
         def topic = new Topic([name: "TestTopic1"])
-        topic.save(flush:true) 
+        topic.save(flush:true)
 
         def topic2 = new Topic([name: "TestTopic2"])
         topic2.save(flush:true)
-        
+
         new Topic([name: "TestTopic3"]).save(flush:true)
         new Topic([name: "netidChange"]).save(flush:true)
 
@@ -25,7 +25,7 @@ class TopicServiceTests {
     }
 
     @After
-    void tearDown() {       
+    void tearDown() {
         //This runs after each test
         //Remove data from test database
         Topic.collection.drop()
@@ -37,13 +37,13 @@ class TopicServiceTests {
 **/
   @Test
     void testListTopics() {
-        
+
         def topicList = topicService.listTopics()
         assert topicList.size == 4
         assert topicList[0].name == "TestTopic1"
         assert topicList[1].name == "TestTopic2"
         assert topicList[2].name == "TestTopic3"
-        
+
     }
 
   @Test
@@ -51,7 +51,7 @@ class TopicServiceTests {
         def topicList = topicService.listTopics("^(netid).*")
         assert topicList.size == 1
         assert topicList[0].name == "netidChange"
-    }   
+    }
 
 /**
     addTopic Tests
@@ -59,28 +59,28 @@ class TopicServiceTests {
   @Test
     void testaddTopic() {
         def topic = topicService.addTopic('test-user', [messageData: [name: "newTopic"]])
-        assert topic.name == "newTopic"       
+        assert topic.name == "newTopic"
         assert Topic.collection.count() == 5
     }
 
   @Test
     void testaddTopicBadName() {
         def topic = topicService.addTopic('test-user', [messageData: [name: "new Topic"]])
-        assert topic == "validator.invalid"       
+        assert topic == "validator.invalid"
         assert Topic.collection.count() == 4
     }
 
   @Test
     void testaddTopicDuplicateName() {
         def topic = topicService.addTopic('test-user', [messageData: [name: "TestTopic1"]])
-        assert topic == "unique"       
+        assert topic == "unique"
         assert Topic.collection.count() == 4
     }
 
   @Test
     void testaddTopicNoData() {
         def topic = topicService.addTopic('test-user', [:])
-        assert topic == null      
+        assert topic == null
         assert Topic.collection.count() == 4
     }
 
@@ -90,31 +90,31 @@ class TopicServiceTests {
   @Test
     void testModifyTopicSuccess() {
         def topic = topicService.modifyTopic('it-msgsvcadm', 'TestTopic1', [messageData: [name: "NewTopicName"]])
-        assert topic.name == "NewTopicName"        
+        assert topic.name == "NewTopicName"
     }
 
   @Test
     void testModifyTopicFailTopicMissing() {
         def topic = topicService.modifyTopic('it-msgsvcadm', 'BadTopicName', [messageData: [name: "NewTopicName"]])
-        assert topic == "TopicNotFound"        
+        assert topic == "TopicNotFound"
     }
 
   @Test
     void testModifyTopicFailNotAuthorized() {
         def topic = topicService.modifyTopic('test-user', 'TestTopic1', [messageData: [name: "NewTopicName2"]])
-        assert topic == "NotAuthorized"        
+        assert topic == "NotAuthorized"
     }
 
   @Test
     void testModifyTopicFailDuplicateName() {
         def topic = topicService.modifyTopic('it-msgsvcadm', 'TestTopic1', [messageData: [name: "TestTopic2"]])
-        assert topic == "unique"        
+        assert topic == "unique"
     }
 
   @Test
     void testModifyTopicBadName() {
         def topic = topicService.modifyTopic('it-msgsvcadm', 'TestTopic1', [messageData: [name: "Test Topic2"]])
-        assert topic == "validator.invalid"        
+        assert topic == "validator.invalid"
     }
 /**
     deleteTopic Tests
@@ -123,7 +123,7 @@ class TopicServiceTests {
     void testDeleteTopic() {
         def topic = topicService.deleteTopic('it-msgsvcadm', 'TestTopic1')
         assert Topic.collection.count() == 4
-        assert Message.collection.count() == 1               
+        assert Message.collection.count() == 1
     }
 
   @Test
@@ -137,27 +137,27 @@ class TopicServiceTests {
 **/
   @Test
     void testModifyPermissionsSuccess() {
-        def messageData = [ messageData: 
-                                [ permissions :                                     
-                                    [ 
+        def messageData = [ messageData:
+                                [ permissions :
+                                    [
                                         canRead : [add : ["epierce","chance"], remove : [] ],
                                         canWrite : [add : ["chance"], remove : [] ],
                                         canAdmin : [add : ["epierce"], remove : [] ]
                                     ]
                                 ]
                             ]
-                            
+
         def topic = topicService.modifyPermissions('it-msgsvcadm', 'TestTopic1', messageData)
         assert topic.canRead.add == 2
         assert topic.canWrite.add == 1
-        assert topic.canAdmin.add == 1        
+        assert topic.canAdmin.add == 1
     }
 
   @Test
     void testModifyPermissionsFailTopicMissing() {
-        def messageData = [ messageData: 
-                                [ permissions :                                     
-                                    [ 
+        def messageData = [ messageData:
+                                [ permissions :
+                                    [
                                         canRead : [add : ["epierce","chance"], remove : [] ],
                                         canWrite : [add : ["chance"], remove : [] ],
                                         canAdmin : [add : ["epierce"], remove : [] ]
@@ -165,14 +165,14 @@ class TopicServiceTests {
                                 ]
                             ]
         def topic = topicService.modifyPermissions('it-msgsvcadm', 'BadTopicName', [messageData: [name: "NewTopicName"]])
-        assert topic == "TopicNotFound"        
+        assert topic == "TopicNotFound"
     }
 
   @Test
     void testModifyPermissionsFailNotAuthorized() {
-        def messageData = [ messageData: 
-                                [ permissions :                                     
-                                    [ 
+        def messageData = [ messageData:
+                                [ permissions :
+                                    [
                                         canRead : [add : ["epierce","chance"], remove : [] ],
                                         canWrite : [add : ["chance"], remove : [] ],
                                         canAdmin : [add : ["epierce"], remove : [] ]
@@ -180,14 +180,14 @@ class TopicServiceTests {
                                 ]
                             ]
         def topic = topicService.modifyPermissions('test-user', 'TestTopic1', [messageData: [name: "NewTopicName2"]])
-        assert topic == "NotAuthorized"        
+        assert topic == "NotAuthorized"
     }
 
   @Test
     void testModifyPermissionsFailNoMessageData() {
         def messageData = [ messageData: []]
         def topic = topicService.modifyPermissions('it-msgsvcadm', 'TestTopic1', [messageData: [name: "NewTopicName2"]])
-        assert topic == "NoPermissionData"        
+        assert topic == "NoPermissionData"
     }
 /**
     listTopicMessages Tests
@@ -221,9 +221,9 @@ class TopicServiceTests {
         def startTime = new Date().parse("yyyy-MM-dd'T'HH:mm:ss","2012-06-01T08:52:00")
         def topicMessages = topicService.filterTopicMessages('it-msgsvcadm', "TestTopic1", startTime, null)
         assert topicMessages.size == 2
-        assert topicMessages[0].messageData.data == "message2"        
-                     
-    }   
+        assert topicMessages[0].messageData.data == "message2"
+
+    }
 
   @Test
     void testFilterTopicMessagesStartAndEnd() {
@@ -231,9 +231,9 @@ class TopicServiceTests {
         def endTime = new Date().parse("yyyy-MM-dd'T'HH:mm:ss","2012-07-07T08:52:00")
 
         def topicMessages = topicService.filterTopicMessages('it-msgsvcadm', "TestTopic1", startTime, endTime)
-        assert topicMessages.size == 2        
+        assert topicMessages.size == 2
         assert topicMessages[0].messageData.data == "message1"
-        assert topicMessages[1].messageData.data == "message2"            
+        assert topicMessages[1].messageData.data == "message2"
     }
 
   @Test
@@ -259,8 +259,8 @@ class TopicServiceTests {
 **/
   @Test
     void testCreateTopicMessage() {
-        def topicMessage = topicService.createTopicMessage('it-msgsvcadm', 'TestTopic1', [ apiVersion:1, createProg: "serviceTest2","messageData" : [mydata: "new message", mydata2: "blah"] ])     
-       
+        def topicMessage = topicService.createTopicMessage('it-msgsvcadm', 'TestTopic1', [ apiVersion:1, createProg: "serviceTest2","messageData" : [mydata: "new message", mydata2: "blah"] ])
+
         assert topicMessage.createProg == "serviceTest2"
         assert topicMessage.messageData.mydata == "new message"
         assert topicMessage.messageDetails.messageContainer.type == "topic"
@@ -269,35 +269,35 @@ class TopicServiceTests {
 
   @Test
     void testCreateTopicMessageNotAuthorized() {
-        def topicMessage = topicService.createTopicMessage('test-user', 'TestTopic1', [ apiVersion:1, createProg: "serviceTest2","messageData" : [mydata: "new message", mydata2: "blah"] ])     
+        def topicMessage = topicService.createTopicMessage('test-user', 'TestTopic1', [ apiVersion:1, createProg: "serviceTest2","messageData" : [mydata: "new message", mydata2: "blah"] ])
         assert topicMessage == "NotAuthorized"
         assert Topic.collection.count() == 4
     }
 
   @Test
     void testCreateTopicMessageNotFound() {
-        def topicMessage = topicService.createTopicMessage('it-msgsvcadm', 'BadTopicName', [ apiVersion:1, createProg: "serviceTest2","messageData" : [mydata: "new message", mydata2: "blah"] ])     
+        def topicMessage = topicService.createTopicMessage('it-msgsvcadm', 'BadTopicName', [ apiVersion:1, createProg: "serviceTest2","messageData" : [mydata: "new message", mydata2: "blah"] ])
         assert topicMessage == "TopicNotFound"
         assert Topic.collection.count() == 4
     }
 
   @Test
     void testCreateTopicMessageNoAPI() {
-        def topicMessage = topicService.createTopicMessage('it-msgsvcadm', 'TestTopic1', [ createProg: "serviceTest2","messageData" : [mydata: "new message", mydata2: "blah"] ])     
+        def topicMessage = topicService.createTopicMessage('it-msgsvcadm', 'TestTopic1', [ createProg: "serviceTest2","messageData" : [mydata: "new message", mydata2: "blah"] ])
         assert topicMessage == "NoApiVersion"
         assert Topic.collection.count() == 4
     }
 
   @Test
     void testCreateTopicMessageNoCreateProgram() {
-        def topicMessage = topicService.createTopicMessage('it-msgsvcadm', 'TestTopic1', [ apiVersion:1, "messageData" : [mydata: "new message", mydata2: "blah"] ])     
+        def topicMessage = topicService.createTopicMessage('it-msgsvcadm', 'TestTopic1', [ apiVersion:1, "messageData" : [mydata: "new message", mydata2: "blah"] ])
         assert topicMessage == "NoCreateProgram"
         assert Topic.collection.count() == 4
     }
 
   @Test
     void testCreateTopicMessageNoMessage() {
-        def topicMessage = topicService.createTopicMessage('it-msgsvcadm', 'TestTopic1', [ apiVersion:1, createProg: "serviceTest2" ])     
+        def topicMessage = topicService.createTopicMessage('it-msgsvcadm', 'TestTopic1', [ apiVersion:1, createProg: "serviceTest2" ])
         assert topicMessage == "NoMessageData"
         assert Topic.collection.count() == 4
     }
@@ -310,7 +310,7 @@ class TopicServiceTests {
         def message = topicService.createTopicMessage('it-msgsvcadm', "TestTopic2",[ apiVersion:1, createProg: "serviceTest2","messageData" : [mydata: "new message", mydata2: "blah"] ])
         def topicMessage = topicService.viewMessage('it-msgsvcadm', "TestTopic2", message.id as String)
         assert topicMessage.messageData.mydata == "new message"
-    } 
+    }
 
   @Test
     void testViewMessageNotAuthorized() {
@@ -338,18 +338,18 @@ class TopicServiceTests {
         def message = topicService.createTopicMessage('it-msgsvcadm', "TestTopic2",[ apiVersion:1, createProg: "serviceTest2","messageData" : [mydata: "new message", mydata2: "blah"] ])
         def topicMessage = topicService.viewMessage('it-msgsvcadm', "TestTopic1", message.id as String)
         assert topicMessage == "WrongTopicName"
-    }    
+    }
 
 /**
     deleteMessages Tests
 **/
-  @Test  
-    void testDeleteMessage() {        
+  @Test
+    void testDeleteMessage() {
         def message = topicService.createTopicMessage('it-msgsvcadm', "TestTopic2",[ apiVersion:1, createProg: "serviceTest2","messageData" : [mydata: "new message", mydata2: "blah"] ])
-        def topicMessage = topicService.deleteMessage('it-msgsvcadm', "TestTopic2", message.id as String)     
+        def topicMessage = topicService.deleteMessage('it-msgsvcadm', "TestTopic2", message.id as String)
         assert topicMessage.messageData.mydata == "new message"
         assert Message.collection.count() == 4
-    } 
+    }
 
   @Test
     void testDeleteMessageNotAuthorized() {
@@ -377,6 +377,6 @@ class TopicServiceTests {
         def message = topicService.createTopicMessage('it-msgsvcadm', "TestTopic2",[ apiVersion:1, createProg: "serviceTest2","messageData" : [mydata: "new message", mydata2: "blah"] ])
         def topicMessage = topicService.deleteMessage('it-msgsvcadm', "TestTopic1", message.id as String)
         assert topicMessage == "WrongTopicName"
-    }        
+    }
 
 }

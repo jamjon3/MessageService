@@ -14,13 +14,13 @@
 		<link rel="apple-touch-icon" href="${resource(dir: 'images', file: 'apple-touch-icon.png')}">
 		<link rel="apple-touch-icon" sizes="114x114" href="${resource(dir: 'images', file: 'apple-touch-icon-retina.png')}">
         <link type="text/css" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/themes/flick/jquery-ui.css" rel="stylesheet" />
-        <link type="text/css" href="https://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.1/css/jquery.dataTables_themeroller.css" rel="stylesheet" /> 
+        <link type="text/css" href="https://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.1/css/jquery.dataTables_themeroller.css" rel="stylesheet" />
 		<link rel="stylesheet" href="${resource(dir: 'js/jQuery-Timepicker-Addon', file: 'jquery-ui-timepicker-addon.css')}" type="text/css">
         <link rel="stylesheet" href="${resource(dir: 'css', file: 'MessageService.css')}" type="text/css">
 		<g:layoutHead/>
         <r:layoutResources />
 	</head>
-	<body>               
+	<body>
           <g:layoutBody/>
           <!-- <div id="footer" class="ui-widget-header ui-corner-all" role="contentinfo"></div> -->
           <div id="spinner" class="spinner" style="display:none;"><g:message code="spinner.alt" default="Loading&hellip;"/></div>

@@ -25,14 +25,14 @@ class BootStrap {
                   if (! Queue.countByName(queueName)) {
                     println "#### Building a test queue - ${queueName}"
                     def queue = new Queue([ name: queueName,
-                                            permissions: [  canRead:[username], 
-                                                            canWrite:[username], 
+                                            permissions: [  canRead:[username],
+                                                            canWrite:[username],
                                                             canAdmin:[username]
                                                           ]
                                           ]).save(failOnError: true)
                   }
                 }
-                
+
                 topicList.each { topicName ->
                   if (! Topic.countByName(topicName)) {
                     println "#### Building a test topic - ${topicName}"
@@ -43,7 +43,7 @@ class BootStrap {
                     topic.save(flush:true)
                   }
                 }
-                 
+
                 break
             case "test":
                 println "#### Test Mode (Start Up)"

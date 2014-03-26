@@ -3,12 +3,12 @@ package edu.usf.cims.MessageService
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.userdetails.User
 import org.apache.commons.logging.LogFactory
- 
+
 class LdapUserDetails extends User {
         private static final log = LogFactory.getLog(this)
- 
+
         private final HashMap _attributes
- 
+
         LdapUserDetails(String username,
                                 String password,
                                 boolean enabled,
@@ -24,9 +24,9 @@ class LdapUserDetails extends User {
                 log.debug("ROLES: ${authorities}")
                 log.debug("ATTRIBUTES: ${_attributes}")
         }
-        
+
         Map getAttributes() { _attributes }
-        
+
         String findByUsername(username){
                 def user = null
                 user

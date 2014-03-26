@@ -1,5 +1,5 @@
 package edu.usf.cims.MessageService
- 
+
 class StubSpringSecurityService {
 
     def currentUser = 'test-user'

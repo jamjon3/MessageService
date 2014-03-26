@@ -1,6 +1,6 @@
 modules = {
     core {
-    }    
+    }
     application {
     }
     topic {

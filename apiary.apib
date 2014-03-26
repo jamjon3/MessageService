@@ -11,20 +11,20 @@ The differences between topics and queues are often confused.  Here's a brief ov
 #Topics#
 MessageService topics are similar to the publish and subscribe (pub/sub) topics available in JMS-based message services. In JMS, when you publish a message it is available to all the subscribers who are interested - so zero to many subscribers will receive a copy of the message.  Only active subscriptions at the time the message is created will get a copy.
 
-New clients to a MessageService topic can request all existing messages instead just receiving any new messages that are created.  This allows new clients or clients that have been disconnected for an extended period to "catch up" to the current state.  Once the client has caught up they can request time-based deltas - all messages created after a specific date/time.   
+New clients to a MessageService topic can request all existing messages instead just receiving any new messages that are created.  This allows new clients or clients that have been disconnected for an extended period to "catch up" to the current state.  Once the client has caught up they can request time-based deltas - all messages created after a specific date/time.
 
 ###Sample Uses for Topics###
 * Any data that needs to be acted on or tracked by multiple people or processes
 * Tracking creation/changes of specific values: (First/Last Name, NetID, Unumber, etc)
 * Logging
- 
+
 #Queues#
 Messages sent to queues will be read by exactly one client. When a message is written to a queue , the status is set to 'pending'.  When it is read by a client, the status is changed to 'in-progress'.  It is the responsibility of the client to acknowledge the receipt and processing of the message and delete it from the queue.
 
 ###Sample Uses for Queues###
 * Volatile data that needs to be processed in a short time (webservice requests, notifications, etc)
 * Data that can be safely discarded once processed
-* Breaking batch processes into smaller, atomic actions which can be done in parallel on mutiple clients 
+* Breaking batch processes into smaller, atomic actions which can be done in parallel on mutiple clients
 --
 
 --
@@ -38,7 +38,7 @@ GET /MessageService/basic/topic
 { "count":4,
   "topics": [
     { "name":"TestTopic1" }, { "name":"TestTopic2" }, { "name":"TestTopic3" }, { "name":"netidChange" }
-    ]    
+    ]
 }
 
 
@@ -51,7 +51,7 @@ GET /MessageService/basic/topic?pattern=^(netid).*
 { "count":1,
   "topics": [
     { "name":"netidChange" }
-    ]    
+    ]
 }
 
 
@@ -69,7 +69,7 @@ POST /MessageService/basic/topic
 < 200
 < Content-Type: application/json
 { "count":1,
-  "topics": { "name": "MyNewTopic" }  
+  "topics": { "name": "MyNewTopic" }
 }
 
 Change the name of a topic
@@ -78,14 +78,14 @@ Change the name of a topic
 PUT /MessageService/basic/topic/TestTopic1
 > Content-Type: application/json
 { "apiVersion" : "1",
-  "messageData": { 
+  "messageData": {
     "name": "NewNameForTopic1"
   }
 }
 < 200
 < Content-Type: application/json
 { "count":1,
-  "topics": { "name": "NewNameForTopic1" }  
+  "topics": { "name": "NewNameForTopic1" }
 }
 
 Change the permission lists for a topic
@@ -96,15 +96,15 @@ Like the creation of a topic, three types of permissions can be set:
 * `permissions.canWrite` - List of users who can write messages to this topic
 * `permissions.canAdmin` - List of users who can delete, rename or change the permissions for this topic
 
-Each permission contains two lists: `add` and `remove`, which contain the usernames to add or remove from the permission list 
+Each permission contains two lists: `add` and `remove`, which contain the usernames to add or remove from the permission list
 PUT /MessageService/basic/topic/MyNewTopic
 > Content-Type: application/json
 { "apiVersion" : "1",
-  "messageData":{ 
+  "messageData":{
     "permissions": {
         "canRead": {
-            "add": ["user3","user4"], 
-            "remove": ["user2"] 
+            "add": ["user3","user4"],
+            "remove": ["user2"]
         },
         "canWrite": {
             "add": ["user3"],
@@ -119,15 +119,15 @@ PUT /MessageService/basic/topic/MyNewTopic
 }
 < 200
 < Content-Type: application/json
-{ 
-    "canRead": { 
+{
+    "canRead": {
         "add": 2,
-        "remove":1 
-    }, 
+        "remove":1
+    },
     "canWrite": {
         "add": 1,
         "remove": 1
-    }, 
+    },
     "canAdmin": {
         "add": 0,
         "remove": 0
@@ -139,7 +139,7 @@ DELETE /MessageService/basic/topic/TestTopic2
 < 200
 < Content-Type: application/json
 { "count":1,
-  "topics": { "name": "TestTopic2" }  
+  "topics": { "name": "TestTopic2" }
 }
 
 --
@@ -151,8 +151,8 @@ GET /MessageService/basic/topic/TestTopic3
 < 200
 < Content-Type: application/json
 {"count":3,
-    "messages": [ 
-      { 
+    "messages": [
+      {
         "id": "51267478e4b0baf4a4ec141b",
 		"creator": "user1",
 		"messageDetails": {
@@ -220,8 +220,8 @@ GET /MessageService/basic/topic/TestTopic3/filter?startTime=2013-01-01T00:00:00&
 < 200
 < Content-Type: application/json
 {"count":2,
-    "messages": [ 
-      { 
+    "messages": [
+      {
 		"id": "51267478e4b0baf4a4ec141b",
 		"creator": "user1",
 		"messageDetails": {
@@ -262,7 +262,7 @@ GET /MessageService/basic/topic/TestTopic3/filter?startTime=2013-01-01T00:00:00&
 
 Create a new topic message
 #####JSON Parameters#####
-* `apiVersion` - MessageService API version this message is using.  Currently, the only valid value is "1" 
+* `apiVersion` - MessageService API version this message is using.  Currently, the only valid value is "1"
 * `createProg` - String or URN that uniquely identifies the program writing this message.
 * `messageData` - Message content
 
@@ -274,15 +274,15 @@ POST /MessageService/basic/topic/TestTopic3
     "messageData" : {
         "hello" : "world",
         "foo" : "bar"
-    }     
+    }
 }
 < 200
 < Content-Type: application/json
 {
     "id"  : "50ed8b12e4b0b1e6ecbeea9f",
-    "apiVersion"  :  "1",    
+    "apiVersion"  :  "1",
     "creator"  :  "epierce",
-    "createTime" : "2013-03-26T19:55:41Z",  
+    "createTime" : "2013-03-26T19:55:41Z",
     "createProg" : "io:apiary:ericpierce:doc",
     "messageDetails" : {
       	"messageContainer": {
@@ -294,7 +294,7 @@ POST /MessageService/basic/topic/TestTopic3
     "messageData" : {
         "hello" : "world",
         "foo" : "bar"
-    }    
+    }
 }
 
 --
@@ -308,7 +308,7 @@ GET /MessageService/basic/queue
 { "count":4,
   "topics": [
     { "name":"TestQueue1" }, { "name":"TestQueue2" }, { "name":"TestQueue3" }, { "name":"AccountChanges" }
-    ]    
+    ]
 }
 
 
@@ -321,7 +321,7 @@ GET /MessageService/basic/queue?pattern=^(Account).*
 { "count":1,
   "topics": [
     { "name":"AccountChanges" }
-    ]    
+    ]
 }
 
 
@@ -339,7 +339,7 @@ POST /MessageService/basic/queue
 < 200
 < Content-Type: application/json
 { "count":1,
-  "topics": { "name": "MyNewQueue" }  
+  "topics": { "name": "MyNewQueue" }
 }
 
 Change the name of a queue
@@ -347,13 +347,13 @@ Change the name of a queue
 * `name` - New queue name
 PUT /MessageService/basic/queue/TestQueue1
 > Content-Type: application/json
-{ "messageData": { 
+{ "messageData": {
     "name": "NewNameForQueue1"
 }
 < 200
 < Content-Type: application/json
 { "count":1,
-  "topics": { "name": "NewNameForQueue1" }  
+  "topics": { "name": "NewNameForQueue1" }
 }
 
 Change the permission lists for a queue
@@ -364,14 +364,14 @@ Like the creation of a queue, three types of permissions can be set:
 * `permissions.canWrite` - List of users who can write messages to this queue
 * `permissions.canAdmin` - List of users who can delete, rename or change the permissions for this queue
 
-Each permission contains two lists: `add` and `remove`, which contain the usernames to add or remove from the permission list 
+Each permission contains two lists: `add` and `remove`, which contain the usernames to add or remove from the permission list
 PUT /MessageService/basic/queue/MyNewQueue
 > Content-Type: application/json
-{ "messageData":{ 
+{ "messageData":{
     "permissions": {
         "canRead": {
-            "add": ["user3","user4"], 
-            "remove": ["user2"] 
+            "add": ["user3","user4"],
+            "remove": ["user2"]
         },
         "canWrite": {
             "add": ["user3"],
@@ -386,15 +386,15 @@ PUT /MessageService/basic/queue/MyNewQueue
 }
 < 200
 < Content-Type: application/json
-{ 
-    "canRead": { 
+{
+    "canRead": {
         "add": 2,
-        "remove":1 
-    }, 
+        "remove":1
+    },
     "canWrite": {
         "add": 1,
         "remove": 1
-    }, 
+    },
     "canAdmin": {
         "add": 0,
         "remove": 0
@@ -406,7 +406,7 @@ DELETE /MessageService/basic/queue/TestQueue2
 < 200
 < Content-Type: application/json
 { "count":1,
-  "topics": { "name": "TestQueue2" }  
+  "topics": { "name": "TestQueue2" }
 }
 
 --
@@ -457,8 +457,8 @@ GET /MessageService/basic/topic/AccountChanges/peek?count=2
 < 200
 < Content-Type: application/json
 {"count": 2,
-    "messages": [ 
-      { 
+    "messages": [
+      {
 		"id": "51267478e4b0baf4a5ec143c",
 		"creator": "it-accountAdmin",
         "status" : "pending",
@@ -586,7 +586,7 @@ GET /MessageService/basic/queue/AccountChanges/in-progress
 
 Create a new queue message
 #####JSON Parameters#####
-* `apiVersion` - MessageService API version this message is using.  Currently, the only valid value is "1" 
+* `apiVersion` - MessageService API version this message is using.  Currently, the only valid value is "1"
 * `createProg` - String or URN that uniquely identifies the program writing this message.
 * `messageData` - Message content
 
@@ -599,15 +599,15 @@ POST /MessageService/basic/queue/AccountChanges
         "host" : "shell.example.edu",
         "username" : "wilson",
         "accountStatus" : "deleted"
-    }     
+    }
 }
 < 200
 < Content-Type: application/json
 {
     "id"  : "50ed8b12e4b0b1e6ecbeea9f",
-    "apiVersion"  :  "1",    
+    "apiVersion"  :  "1",
     "creator"  :  "epierce",
-    "createTime" : "2013-03-26T19:55:41Z",  
+    "createTime" : "2013-03-26T19:55:41Z",
     "createProg" : "io:apiary:ericpierce:doc",
     "status" : "pending",
     "messageDetails" : {
@@ -621,7 +621,7 @@ POST /MessageService/basic/queue/AccountChanges
         "host" : "shell.example.edu",
         "username" : "wilson",
         "accountStatus" : "deleted"
-    }    
+    }
 }
 
 Change the status of a queue message
@@ -629,7 +629,7 @@ Change the status of a queue message
 * `messageData.status` - New message status
 PUT /MessageService/basic/queue/AccountChanges/50febc71e4b009d677459193
 > Content-Type: application/json
-{ "messageData": { 
+{ "messageData": {
     "status": "pending"
 }
 < 200
@@ -664,8 +664,8 @@ PUT /MessageService/basic/queue/AccountChanges/50febc71e4b009d677459193
   ]
 }
 
-Delete a queue message.  
-**You must delete a message after processing the message content!** 
+Delete a queue message.
+**You must delete a message after processing the message content!**
 DELETE /MessageService/basic/queue/AccountChanges/50febc71e4b009d677459193
 < 200
 < Content-Type: application/json
@@ -707,7 +707,7 @@ Common error messages produced by MessageService
 Duplicate name when creating a topic or queue
 POST /MessageService/basic/topic/MyTopic
 { "apiVersion" : "1",
-  "messageData": { 
+  "messageData": {
     "name": "NewNameForTopic1"
   }
 }
@@ -718,7 +718,7 @@ POST /MessageService/basic/topic/MyTopic
 Invalid character in name when creating a topic or queue
 POST /MessageService/basic/topic
 { "apiVersion" : "1",
-  "messageData": { 
+  "messageData": {
     "name": "Bad_Topic"
   }
 }
@@ -729,7 +729,7 @@ POST /MessageService/basic/topic
 Topic/queue not found when trying to update it
 PUT /MessageService/basic/topic/ThisTopicDoesNotExist
 { "apiVersion" : "1",
-  "messageData": { 
+  "messageData": {
     "name": "NewName"
   }
 }
@@ -740,7 +740,7 @@ PUT /MessageService/basic/topic/ThisTopicDoesNotExist
 User is not authorized to update this topic/queue
 PUT /MessageService/basic/queue/SomeQueue
 { "apiVersion" : "1",
-  "messageData": { 
+  "messageData": {
     "name": "NewQueueName"
   }
 }
@@ -765,8 +765,8 @@ POST /MessageService/basic/queue/SomeQueue
 Invalid JSON data when creating a new message in a topic or queue
 POST /MessageService/basic/queue/SomeQueue
 { "apiVersion" : "1",
-  "messageData": { 
-    "data": 
+  "messageData": {
+    "data":
   }
 }
 < 400

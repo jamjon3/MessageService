@@ -10,7 +10,7 @@ class TopicControllerTests extends GroovyTestCase {
     def stubSpringSecurityService = new StubSpringSecurityService()
 
     @Before
-    void setup() {
+    void setUp() {
         //This runs before each test
         def topic = new Topic([name: "TestTopic1"])
         topic.save(flush:true)
@@ -49,7 +49,7 @@ class TopicControllerTests extends GroovyTestCase {
 
         controller.listTopics()
         assert controller.response.status == 200
-        assert controller.response.contentAsString == '{"count":4,"topics":[{"name":"TestTopic1","stats":{"messages":0}},{"name":"TestTopic2","stats":{"messages":0}},{"name":"TestTopic3","stats":{"messages":0}},{"name":"netidChange","stats":{"messages":0}}]}'
+        assert controller.response.contentAsString == '{"count":4,"topics":[{"name":"TestTopic1"},{"name":"TestTopic2"},{"name":"TestTopic3"},{"name":"netidChange"}]}'
     }
 
   @Test
@@ -69,7 +69,7 @@ class TopicControllerTests extends GroovyTestCase {
         controller.listTopics()
         assert controller.response.status == 200
 
-        assert controller.response.contentAsString =~ /<\?xml version="1.0" encoding="UTF-8"\?><map><entry key="count">1<\/entry><entry key="topics"><map><entry key="name">netidChange<\/entry><entry key="stats"><entry key="messages">0<\/entry><\/entry><\/map><\/entry><\/map>/
+        assert controller.response.contentAsString == '<?xml version="1.0" encoding="UTF-8"?><map><entry key="count">1</entry><entry key="topics"><map><entry key="name">netidChange</entry></map></entry></map>'
     }
 
   @Test
@@ -88,7 +88,7 @@ class TopicControllerTests extends GroovyTestCase {
         controller.createTopic()
 
         assert controller.response.status == 200
-        assert controller.response.contentAsString == '{"count":1,"topics":{"name":"newTopic","stats":{"messages":0}}}'
+        assert controller.response.contentAsString == '{"count":1,"topics":{"name":"newTopic"}}'
     }
 
   @Test
@@ -141,7 +141,7 @@ class TopicControllerTests extends GroovyTestCase {
 
         controller.modifyTopic()
         assert controller.response.status == 200
-        assert controller.response.contentAsString == '{"count":1,"topics":{"name":"oldTopic","stats":{"messages":0}}}'
+        assert controller.response.contentAsString == '{"count":1,"topics":{"name":"oldTopic"}}'
     }
 
   @Test
@@ -302,7 +302,7 @@ class TopicControllerTests extends GroovyTestCase {
 
         controller.deleteTopic()
         assert controller.response.status == 200
-        assert controller.response.contentAsString == '{"count":1,"topics":{"name":"TestTopic1","stats":{"messages":0}}}'
+        assert controller.response.contentAsString == '{"count":1,"topics":{"name":"TestTopic1"}}'
     }
 
   @Test

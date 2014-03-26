@@ -1,4 +1,3 @@
-/*
 grails {
     mongo {
         host = "localhost"
@@ -10,4 +9,3 @@ grails {
         }
     }
 }
-*/

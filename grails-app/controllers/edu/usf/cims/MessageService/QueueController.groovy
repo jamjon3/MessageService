@@ -79,7 +79,7 @@ class QueueController {
               if (params.callback) {
                 render(contentType: "text/javascript", encoding: "UTF-8", text: "${params.callback}(${responseText.encodeAsJSON()})")
               } else {
-                render responseText as JSON
+                render errorText as JSON
               }
             }
         }

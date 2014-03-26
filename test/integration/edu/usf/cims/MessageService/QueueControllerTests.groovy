@@ -10,7 +10,7 @@ class QueueControllerTests extends GroovyTestCase {
     def stubSpringSecurityService = new StubSpringSecurityService()
 
     @Before
-    void setup() {
+    void setUp() {
         //This runs before each test
         def queue = new Queue([name: "TestQueue1"])
         queue.save(flush:true)
@@ -48,7 +48,7 @@ class QueueControllerTests extends GroovyTestCase {
 
         controller.listQueues()
         assert controller.response.status == 200
-        assert controller.response.contentAsString == '{"count":4,"queues":[{"name":"TestQueue1","stats":{"messages":0,"status":{"in-progress":0,"pending":0,"error":0}}},{"name":"TestQueue2","stats":{"messages":0,"status":{"in-progress":0,"pending":0,"error":0}}},{"name":"TestQueue3","stats":{"messages":0,"status":{"in-progress":0,"pending":0,"error":0}}},{"name":"netidChange","stats":{"messages":0,"status":{"in-progress":0,"pending":0,"error":0}}}]}'
+        assert controller.response.contentAsString == '{"count":4,"queues":[{"name":"TestQueue1"},{"name":"TestQueue2"},{"name":"TestQueue3"},{"name":"netidChange"}]}'
     }
 
   @Test
@@ -68,7 +68,7 @@ class QueueControllerTests extends GroovyTestCase {
         controller.listQueues()
         assert controller.response.status == 200
 
-        assert controller.response.contentAsString =~ /<\?xml version="1.0" encoding="UTF-8"\?><map><entry key="count">1<\/entry><entry key="queues"><map><entry key="name">netidChange<\/entry><entry key="stats"><entry key="messages">0<\/entry><entry key="status"><entry key="in-progress">0<\/entry><entry key="pending">0<\/entry><entry key="error">0<\/entry><\/entry><\/entry><\/map><\/entry><\/map>/
+        assert controller.response.contentAsString == '<?xml version="1.0" encoding="UTF-8"?><map><entry key="count">1</entry><entry key="queues"><map><entry key="name">netidChange</entry></map></entry></map>'
     }
 
   @Test
@@ -87,7 +87,7 @@ class QueueControllerTests extends GroovyTestCase {
         controller.createQueue()
 
         assert controller.response.status == 200
-        assert controller.response.contentAsString == '{"count":1,"queues":{"name":"newQueue","stats":{"messages":0,"status":{"in-progress":0,"pending":0,"error":0}}}}'
+        assert controller.response.contentAsString == '{"count":1,"queues":{"name":"newQueue"}}'
     }
 
   @Test
@@ -140,7 +140,7 @@ class QueueControllerTests extends GroovyTestCase {
 
         controller.modifyQueue()
         assert controller.response.status == 200
-        assert controller.response.contentAsString == '{"count":1,"queues":{"name":"oldQueue","stats":{"messages":0,"status":{"in-progress":0,"pending":0,"error":0}}}}'
+        assert controller.response.contentAsString == '{"count":1,"queues":{"name":"oldQueue"}}'
     }
 
   @Test
@@ -301,7 +301,7 @@ class QueueControllerTests extends GroovyTestCase {
 
         controller.deleteQueue()
         assert controller.response.status == 200
-        assert controller.response.contentAsString == '{"count":1,"queues":{"name":"TestQueue1","stats":{"messages":0,"status":{"in-progress":0,"pending":0,"error":0}}}}'
+        assert controller.response.contentAsString == '{"count":1,"queues":{"name":"TestQueue1"}}'
     }
 
   @Test

@@ -1,7 +1,7 @@
 package edu.usf.cims.MessageService
 
 import grails.converters.*
-import grails.plugins.springsecurity.Secured
+import grails.plugin.springsecurity.annotation.Secured
 import groovy.time.TimeCategory
 
 class TopicController {
@@ -86,7 +86,7 @@ class TopicController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def listTopics = {
+    def listTopics() {
       def username = springSecurityService.authentication.name
       def ipAddress = request.getRemoteAddr()
       def topicResult = topicService.listTopics(params.pattern)
@@ -107,7 +107,7 @@ class TopicController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def createTopic = {
+    def createTopic() {
         def username = springSecurityService.authentication.name
         def ipAddress = request.getRemoteAddr()
         def message = getMessageBody()
@@ -148,7 +148,7 @@ class TopicController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def modifyTopic = {
+    def modifyTopic() {
         def username = springSecurityService.authentication.name
         def ipAddress = request.getRemoteAddr()
 
@@ -214,7 +214,7 @@ class TopicController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def deleteTopic = {
+    def deleteTopic() {
       def username = springSecurityService.authentication.name
       def ipAddress = request.getRemoteAddr()
       def topic = topicService.deleteTopic(username, params.name)
@@ -247,7 +247,7 @@ class TopicController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def listTopicMessages = {
+    def listTopicMessages() {
         def username = springSecurityService.authentication.name
         def ipAddress = request.getRemoteAddr()
 
@@ -294,7 +294,7 @@ class TopicController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def filterTopicMessages = {
+    def filterTopicMessages() {
         def username = springSecurityService.authentication.name
         def ipAddress = request.getRemoteAddr()
 
@@ -358,7 +358,7 @@ class TopicController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def createTopicMessage = {
+    def createTopicMessage() {
       def username = springSecurityService.authentication.name
       def ipAddress = request.getRemoteAddr()
       def message = getMessageBody()
@@ -420,7 +420,7 @@ class TopicController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def viewMessage = {
+    def viewMessage() {
       def username = springSecurityService.authentication.name
       def ipAddress = request.getRemoteAddr()
       if (params.id){
@@ -475,7 +475,7 @@ class TopicController {
 
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def deleteMessage = {
+    def deleteMessage() {
       def username = springSecurityService.authentication.name
       def ipAddress = request.getRemoteAddr()
       if (params.id){
@@ -522,7 +522,7 @@ class TopicController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def requestError = {
+    def requestError() {
         renderError(405, "UnsupportedHttpVerb: ${request.method} not allowed")
         return
     }

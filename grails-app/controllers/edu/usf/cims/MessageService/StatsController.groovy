@@ -1,7 +1,7 @@
 package edu.usf.cims.MessageService
 
 import grails.converters.*
-import grails.plugins.springsecurity.Secured
+import grails.plugin.springsecurity.annotation.Secured
 
 class StatsController {
     def statsService
@@ -75,10 +75,10 @@ class StatsController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def index = {}
+    def index() {}
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def combinedStats = {
+    def combinedStats() {
             // Yesterday
       def startTime = new Date() - 1
       // Now
@@ -134,7 +134,7 @@ class StatsController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def queueStats = {
+    def queueStats() {
             // Yesterday
       def startTime = new Date() - 1
       // Now
@@ -182,7 +182,7 @@ class StatsController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def topicStats = {
+    def topicStats() {
       // Yesterday
       def startTime = new Date() - 1
       // Now
@@ -232,7 +232,7 @@ class StatsController {
 
     **/
     @Secured(['ROLE_ITMESSAGESERVICEADMIN'])
-    def requestError = {
+    def requestError() {
         renderError(405, "UnsupportedHttpVerb: ${request.method} not allowed")
     }
 }

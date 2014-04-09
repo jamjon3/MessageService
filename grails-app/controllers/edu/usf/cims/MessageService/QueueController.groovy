@@ -1,7 +1,7 @@
 package edu.usf.cims.MessageService
 
 import grails.converters.*
-import grails.plugins.springsecurity.Secured
+import grails.plugin.springsecurity.annotation.Secured
 import groovy.time.TimeCategory
 
 class QueueController {
@@ -86,7 +86,7 @@ class QueueController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def listQueues = {
+    def listQueues() {
       def username = springSecurityService.authentication.name
       def ipAddress = request.getRemoteAddr()
       def queueResult = queueService.listQueues(params.pattern)
@@ -107,7 +107,7 @@ class QueueController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def createQueue = {
+    def createQueue() {
         def username = springSecurityService.authentication.name
         def ipAddress = request.getRemoteAddr()
         def message = getMessageBody()
@@ -148,7 +148,7 @@ class QueueController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def modifyQueue = {
+    def modifyQueue() {
         def username = springSecurityService.authentication.name
         def ipAddress = request.getRemoteAddr()
 
@@ -214,7 +214,7 @@ class QueueController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def deleteQueue = {
+    def deleteQueue() {
       def username = springSecurityService.authentication.name
       def ipAddress = request.getRemoteAddr()
       def queue = queueService.deleteQueue(username, params.name)
@@ -247,7 +247,7 @@ class QueueController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def getNextMessage = {
+    def getNextMessage() {
         def username = springSecurityService.authentication.name
         def ipAddress = request.getRemoteAddr()
 
@@ -295,7 +295,7 @@ class QueueController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def peek = {
+    def peek() {
       def username = springSecurityService.authentication.name
       def ipAddress = request.getRemoteAddr()
 
@@ -331,7 +331,7 @@ class QueueController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def listInProgressMessages = {
+    def listInProgressMessages() {
       def username = springSecurityService.authentication.name
       def ipAddress = request.getRemoteAddr()
 
@@ -368,7 +368,7 @@ class QueueController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def createQueueMessage = {
+    def createQueueMessage() {
       def username = springSecurityService.authentication.name
       def ipAddress = request.getRemoteAddr()
       def message = getMessageBody()
@@ -430,7 +430,7 @@ class QueueController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def viewMessage = {
+    def viewMessage() {
       def username = springSecurityService.authentication.name
       def ipAddress = request.getRemoteAddr()
       if (params.id){
@@ -484,7 +484,7 @@ class QueueController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def modifyMessage = {
+    def modifyMessage() {
       def username = springSecurityService.authentication.name
       def ipAddress = request.getRemoteAddr()
       if (params.id){
@@ -555,7 +555,7 @@ class QueueController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def deleteMessage = {
+    def deleteMessage() {
       def username = springSecurityService.authentication.name
       def ipAddress = request.getRemoteAddr()
       if (params.id){
@@ -602,7 +602,7 @@ class QueueController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def requestError = {
+    def requestError() {
         renderError(405, "UnsupportedHttpVerb: ${request.method} not allowed")
         return
     }

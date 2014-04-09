@@ -19,16 +19,23 @@ grails.project.dependency.resolution = {
         mavenLocal()
         grailsCentral()
         mavenCentral()
+        mavenRepo 'http://repo.spring.io/milestone'
+        mavenRepo 'https://oss.sonatype.org/content/repositories/snapshots'
    }
     dependencies {
-      compile "commons-lang:commons-lang:2.5"
+      compile 'commons-lang:commons-lang:2.5'
+      //compile 'org.pac4j:pac4j-core:1.4.1'
+      compile 'org.pac4j:pac4j-core:1.5.0-SNAPSHOT' 
     }
 
     plugins {
         compile ":mongodb:1.2.0"
-        compile ":spring-security-core:1.2.7.3"
-        compile ":spring-security-cas-usf:1.2.0"
-        compile ":spring-security-ldap:1.0.6"
+        compile ":spring-security-core:2.0-RC2"
+     //   compile ":spring-security-cas:2.0-RC1"
+        compile ":spring-security-ldap:2.0-RC2"
+        compile ":spring-security-rest:1.3.2", {
+            excludes: 'spring-security-core'
+        }
 
 /*
         compile ":resources:1.2.RC2"

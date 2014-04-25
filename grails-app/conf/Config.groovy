@@ -164,3 +164,5 @@ grails.plugin.springsecurity.controllerAnnotations.staticRules = [
    '/**/favicon.ico': ['permitAll'],
 ]
 
+// Disable auditing to improve performance
+audit.disabled = true

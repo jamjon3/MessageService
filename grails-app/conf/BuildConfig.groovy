@@ -24,25 +24,17 @@ grails.project.dependency.resolution = {
    }
     dependencies {
       compile 'commons-lang:commons-lang:2.5'
-      //compile 'org.pac4j:pac4j-core:1.4.1'
       compile 'org.pac4j:pac4j-core:1.5.0-SNAPSHOT' 
     }
 
     plugins {
         compile ":mongodb:1.2.0"
         compile ":spring-security-core:2.0-RC2"
-     //   compile ":spring-security-cas:2.0-RC1"
         compile ":spring-security-ldap:2.0-RC2"
         compile ":spring-security-rest:1.3.2", {
             excludes: 'spring-security-core'
         }
 
-/*
-        compile ":resources:1.2.RC2"
-        runtime ":cached-resources:1.0"
-        runtime ":angularjs-resources:1.0.2"
-        runtime ":twitter-bootstrap:2.3.2"
-*/
         build ":tomcat:$grailsVersion"
     }
 }

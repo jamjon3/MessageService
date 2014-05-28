@@ -9,14 +9,35 @@ class AuditService {
     def writeAuditEntry(Map auditDetails) {
 
       // If auditing is disabled, just exit
-      if (grailsApplication.config.audit.disabled) return true
+      if (! grailsApplication.config.audit.enabled) return true
 
-      def auditEntry = new AuditEntry(auditDetails)
+      if(grailsApplication.config.audit.target == 'mongodb') {
 
-      if(! auditEntry.save(flush: true)) {
-        log.warn("Failed saving auditMessage for action ${auditDetails.action} on ${auditDetails.target}")
-        return false
-      } else {
+        def auditEntry = new AuditEntry(auditDetails)
+
+        if(! auditEntry.save(flush: true)) {
+          log.warn("Failed saving auditMessage for action ${auditDetails.action} on ${auditDetails.target}")
+          return false
+        } else {
+          return true
+        }
+      }
+
+      if(grailsApplication.config.audit.target == 'log4j') {
+
+        def formattedDate = new Date().format("E, dd MMM yyyy HH:mm:ss Z")
+        def who = auditDetails.actor
+        def what = auditDetails.action
+        def reason = ": ${auditDetails.reason}" ?: ''
+        def containerType = auditDetails.containerType ?: ''
+        def containerName = auditDetails.containerName ?: ''
+        def details = "${containerType} ${containerName} ${reason}"
+        def ipAddress = auditDetails.ipAddress
+
+        def separator = grailsApplication.config.audit.separator ?: "|"
+        def auditData = formattedDate + separator + grailsApplication.metadata['app.name'] + separator + who + separator + ipAddress + separator + what + separator + details
+
+        log.info(auditData)
         return true
       }
 

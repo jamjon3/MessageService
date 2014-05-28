@@ -24,7 +24,8 @@ grails.project.dependency.resolution = {
    }
     dependencies {
       compile 'commons-lang:commons-lang:2.5'
-      compile 'org.pac4j:pac4j-core:1.5.0-SNAPSHOT' 
+      compile 'org.pac4j:pac4j-core:1.5.0'
+      compile 'org.pac4j:pac4j-oauth:1.5.0'
     }
 
     plugins {

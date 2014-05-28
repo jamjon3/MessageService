@@ -202,11 +202,14 @@ class QueueService {
 
             //Search for the oldest message in the 'pending' status and change it to 'in-progress'
             def result = Message.collection.findAndModify(  ["messageContainer.id" : queue.id, status : "pending"],
-                                                            [$sort: [createTime: 1]],
-                                                            [$set: [status: "in-progress", taken: taken]]) as Message
+                                                            null,  // fields: Return all
+                                                            null,  // sort: The index on createTime makes sure this returns the oldest value.
+                                                            false, // delete
+                                                            [$set: [status: "in-progress", taken: taken]], // update
+                                                            true, // returnNew
+                                                            false //upsert
+                                                            ) as Message
             if (result?.id) {
-                result.status = "in-progress"
-                result.taken = taken
                 log.debug("User ${username} picked up message ${result.id} from queue ${queueName}")
                 return result.render()
             } else {

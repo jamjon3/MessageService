@@ -164,5 +164,5 @@ grails.plugin.springsecurity.controllerAnnotations.staticRules = [
    '/**/favicon.ico': ['permitAll'],
 ]
 
-// Disable auditing to improve performance
-audit.disabled = true
+audit.enabled = true
+audit.target = "log4j"  // valid: mongodb or log4j

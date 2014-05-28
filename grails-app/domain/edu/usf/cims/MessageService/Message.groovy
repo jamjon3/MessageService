@@ -22,14 +22,14 @@ class Message {
         createTime index:true
     }
 
-    def render() { 
+    def render() {
         def text = [    id: id as String,
                         creator: creator,
-                        messageDetails: [ 
+                        messageDetails: [
                           messageContainer: [
-                            type: messageContainer.type, 
-                            id: messageContainer.id as String, 
-                            name: messageContainer.name] 
+                            type: messageContainer.type,
+                            id: messageContainer.id as String,
+                            name: messageContainer.name]
                         ],
                         apiVersion: apiVersion,
                         createTime: createTime,
@@ -41,12 +41,12 @@ class Message {
                         if (this["taken"]) text.messageDetails.taken = this["taken"]
                         if (this["updated"]) text.messageDetails.updated = this["updated"]
                     }
-                    
+
         return text
     }
 
     public String toString() {
             render() as String
     }
-    
+
 }

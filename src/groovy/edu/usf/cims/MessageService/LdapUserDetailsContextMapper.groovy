@@ -21,7 +21,7 @@ class LdapUserDetailsContextMapper implements UserDetailsContextMapper {
    private static final List NO_ROLES = [new GrantedAuthorityImpl("LDAP_AUTH")]
 
    UserDetails mapUserFromContext(DirContextOperations ctx, String username, Collection authorities) {
-    
+
       def ldapAuthorities = (ctx?.originalAttrs?.attrs[ROLE_ATTR]?.values)?:NO_ROLES
 
       //Prefix all authorities with 'ROLE_'
@@ -29,12 +29,12 @@ class LdapUserDetailsContextMapper implements UserDetailsContextMapper {
       ldapAuthorities.each() { authority ->
             if(authority instanceof String) Prefixed_Roles.add(new GrantedAuthorityImpl(PREFIX + authority.toUpperCase()))
       }
-      
+
       def attributes = new HashMap()
       ctx.originalAttrs.attrs.each() { attribute ->
          attributes.put(attribute.key,attribute.value.values)
       }
-      new LdapUserDetails(username, NON_EXISTENT_PASSWORD_VALUE, true, true, true, true, Prefixed_Roles, attributes)      
+      new LdapUserDetails(username, NON_EXISTENT_PASSWORD_VALUE, true, true, true, true, Prefixed_Roles, attributes)
    }
 
    void mapUserToContext(UserDetails user, DirContextAdapter ctx) {

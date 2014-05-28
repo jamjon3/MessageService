@@ -27,7 +27,7 @@ class QueueService {
             return Queue.list()*.render()
         }
     }
-    
+
     def addQueue(String username, Map message) {
         if((message.messageData)?(message.messageData.name):false) {
             def queue = new Queue([name: message.messageData.name])
@@ -62,13 +62,13 @@ class QueueService {
         } else {
             log.error("No message data was given")
             return null
-        }        
+        }
     }
 
     def modifyQueue(String username, String queueName, Map message) {
         if(message.messageData.name) {
             def queue = Queue.findByName(queueName)
-                       
+
             if(queue) {
 
                 //Check authN
@@ -83,7 +83,7 @@ class QueueService {
                     def results = Message.collection.updateMulti([ "messageContainer.id" : queue.id],[$set: [ "messageContainer.name" : queue.name] ])
                     log.info("Updated queue ${queue.name} and ${results.n} messages")
                     return queue.render()
-                }                                
+                }
             } else {
                 log.warn("Invalid queue ( ${queueName} ) was given")
                 return "QueueNotFound"
@@ -92,7 +92,7 @@ class QueueService {
         } else {
             log.error("No message data was given")
             return null
-        }        
+        }
     }
 
     def deleteQueue(String username, String queueName) {
@@ -113,7 +113,7 @@ class QueueService {
         } else {
             log.warn("Invalid queue ( ${queueName} ) was given")
             return "QueueNotFound"
-        }       
+        }
     }
 
     def modifyPermissions(String username, String queueName, Map message){
@@ -175,18 +175,18 @@ class QueueService {
                 return "UpdateFailed"
             } else {
                 return result
-            }       
+            }
         } else {
             log.warn("Invalid queue ( ${queueName} ) was given")
             return "QueueNotFound"
-        }       
+        }
     }
 
 
 
 
     /**
-    
+
     * Methods dealing with Messages
 
     **/
@@ -201,17 +201,20 @@ class QueueService {
             def taken = [date: new Date(), user: username, ipAddress: ipAddress]
 
             //Search for the oldest message in the 'pending' status and change it to 'in-progress'
-            def result = Message.collection.findAndModify(  ["messageContainer.id" : queue.id, status : "pending"], 
-                                                            [$sort: [createTime: 1]], 
-                                                            [$set: [status: "in-progress", taken: taken]]) as Message
+            def result = Message.collection.findAndModify(  ["messageContainer.id" : queue.id, status : "pending"],
+                                                            null,  // fields: Return all
+                                                            null,  // sort: The index on createTime makes sure this returns the oldest value.
+                                                            false, // delete
+                                                            [$set: [status: "in-progress", taken: taken]], // update
+                                                            true, // returnNew
+                                                            false //upsert
+                                                            ) as Message
             if (result?.id) {
-                result.status = "in-progress"
-                result.taken = taken
                 log.debug("User ${username} picked up message ${result.id} from queue ${queueName}")
                 return result.render()
             } else {
                 return "NoResults"
-            } 
+            }
 
         } else {
             log.warn("Invalid queue ( ${queueName} ) was given")
@@ -246,7 +249,7 @@ class QueueService {
             def results = Message.findAllByMessageContainerAndStatus(new MessageContainer([name:queue.name,type:"queue",id:queue.id]),"in-progress",[sort:"createTime", order:"asc"])
             log.debug("User ${username} listed ${results.size} in-progress messages from queue ${queueName}")
             return results*.render()
-            
+
         } else {
             log.warn("Invalid queue ( ${queueName} ) was given")
             return "QueueNotFound"
@@ -268,7 +271,7 @@ class QueueService {
             //Create the new message
             def queueMessage = new Message(creator: username, status: "pending", apiVersion: message.apiVersion, createProg: message.createProg, messageData: message.messageData as LinkedHashMap)
             queueMessage.messageContainer = [type: "queue", id: queue.id, name: queue.name]
-       
+
             if(queueMessage.save(flush:true)){
                 log.info("Added new message ${queueMessage.id as String} to queue ${queueName} for ${username}")
                 return queueMessage.render()
@@ -286,19 +289,19 @@ class QueueService {
 
             queueMessage.delete()
             log.warn("Message ${messageId} deleted")
-            return queueMessageHash    
+            return queueMessageHash
         } else {
             log.warn("Invalid queue ( ${queueName} ) was given")
-            return "QueueNotFound"           
+            return "QueueNotFound"
         }
     }
-    
+
     def viewMessage(String username, String queueName, String messageId) {
         def queue = Queue.findByName(queueName)
         if (queue) {
 
             //Check authN
-            if (! queue.canRead(username)) return "NotAuthorized"                    
+            if (! queue.canRead(username)) return "NotAuthorized"
 
             def queueMessage = Message.findById(messageId)
             if (!queueMessage) {
@@ -324,9 +327,9 @@ class QueueService {
     def modifyMessage(String username, String queueName, String messageId, Map messageUpdate, String ipAddress = "0.0.0.0") {
         def queue = Queue.findByName(queueName)
         if (queue) {
-            
+
             //Check authN
-            if (! queue.canWrite(username)) return "NotAuthorized"     
+            if (! queue.canWrite(username)) return "NotAuthorized"
 
             if (! messageUpdate.status) {
               return "MessageStatusRequired"
@@ -347,7 +350,7 @@ class QueueService {
             def origStatus = queueMessage.status
 
             //Make sure the status passed is valid
-            queueMessage.status = messageUpdate.status 
+            queueMessage.status = messageUpdate.status
             if (! queueMessage.validate()){
               if(queueMessage.errors.hasFieldErrors("status")) {
                 log.error("Update failed: ${messageUpdate.status} is not valid")
@@ -370,19 +373,19 @@ class QueueService {
             } else {
                 log.error("Message ${messageId} update failed")
                 return "SaveFailed"
-            }                                       
-        } else { 
+            }
+        } else {
             log.warn("Invalid queue ( ${queueName} ) was given")
             return "QueueNotFound"
-        } 
+        }
     }
 
     def deleteMessage(String username, String queueName, String messageId) {
         def queue = Queue.findByName(queueName)
-        if (queue) {            
+        if (queue) {
 
             //Check authN
-            if (! queue.canWrite(username)) return "NotAuthorized"   
+            if (! queue.canWrite(username)) return "NotAuthorized"
 
             def queueMessage = Message.findById(messageId)
             if (!queueMessage) {
@@ -399,7 +402,7 @@ class QueueService {
 
             queueMessage.delete(flush: true)
             log.warn("Message ${messageId} deleted")
-            return queueMessageHash    
+            return queueMessageHash
         } else {
             log.warn("Invalid queue ( ${queueName} ) was given")
             return "QueueNotFound"

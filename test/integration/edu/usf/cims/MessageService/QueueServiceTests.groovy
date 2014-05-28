@@ -10,11 +10,11 @@ class QueueServiceTests {
     void setup() {
         //This runs before each test
         def queue = new Queue([name: "TestQueue1"])
-        queue.save(flush:true) 
+        queue.save(flush:true)
 
         def queue2 = new Queue([name: "TestQueue2"])
         queue2.save(flush:true)
-        
+
         new Queue([name: "TestQueue3"]).save(flush:true)
         new Queue([name: "netidChange"]).save(flush:true)
 
@@ -25,7 +25,7 @@ class QueueServiceTests {
     }
 
     @After
-    void tearDown() {       
+    void tearDown() {
         //This runs after each test
         //Remove data from test database
         Queue.collection.drop()
@@ -38,13 +38,13 @@ class QueueServiceTests {
 **/
   @Test
     void testListQueues() {
-        
+
         def queueList = queueService.listQueues()
         assert queueList.size == 4
         assert queueList[0].name == "TestQueue1"
         assert queueList[1].name == "TestQueue2"
         assert queueList[2].name == "TestQueue3"
-        
+
     }
 
   @Test
@@ -52,7 +52,7 @@ class QueueServiceTests {
         def queueList = queueService.listQueues("^(netid).*")
         assert queueList.size == 1
         assert queueList[0].name == "netidChange"
-    }   
+    }
 
 /**
     addQueue Tests
@@ -60,28 +60,28 @@ class QueueServiceTests {
   @Test
     void testaddQueue() {
         def queue = queueService.addQueue('test-user', [messageData: [name: "newQueue"]])
-        assert queue.name == "newQueue"       
+        assert queue.name == "newQueue"
         assert Queue.collection.count() == 5
     }
 
   @Test
     void testaddQueueBadName() {
         def queue = queueService.addQueue('test-user', [messageData: [name: "new Queue"]])
-        assert queue == "validator.invalid"       
+        assert queue == "validator.invalid"
         assert Queue.collection.count() == 4
     }
 
   @Test
     void testaddQueueDuplicateName() {
         def queue = queueService.addQueue('test-user', [messageData: [name: "TestQueue1"]])
-        assert queue == "unique"       
+        assert queue == "unique"
         assert Queue.collection.count() == 4
     }
 
   @Test
     void testaddQueueNoData() {
         def queue = queueService.addQueue('test-user', [:])
-        assert queue == null      
+        assert queue == null
         assert Queue.collection.count() == 4
     }
 
@@ -91,31 +91,31 @@ class QueueServiceTests {
   @Test
     void testModifyQueueSuccess() {
         def queue = queueService.modifyQueue('it-msgsvcadm', 'TestQueue1', [messageData: [name: "NewQueueName"]])
-        assert queue.name == "NewQueueName"        
+        assert queue.name == "NewQueueName"
     }
 
   @Test
     void testModifyQueueFailQueueMissing() {
         def queue = queueService.modifyQueue('it-msgsvcadm', 'BadQueueName', [messageData: [name: "NewQueueName"]])
-        assert queue == "QueueNotFound"        
+        assert queue == "QueueNotFound"
     }
 
   @Test
     void testModifyQueueFailNotAuthorized() {
         def queue = queueService.modifyQueue('test-user', 'TestQueue1', [messageData: [name: "NewQueueName2"]])
-        assert queue == "NotAuthorized"        
+        assert queue == "NotAuthorized"
     }
 
   @Test
     void testModifyQueueFailDuplicateName() {
         def queue = queueService.modifyQueue('it-msgsvcadm', 'TestQueue1', [messageData: [name: "TestQueue2"]])
-        assert queue == "unique"        
+        assert queue == "unique"
     }
 
   @Test
     void testModifyQueueBadName() {
         def queue = queueService.modifyQueue('it-msgsvcadm', 'TestQueue1', [messageData: [name: "Test Queue2"]])
-        assert queue == "validator.invalid"        
+        assert queue == "validator.invalid"
     }
 /**
     deleteQueue Tests
@@ -126,7 +126,7 @@ class QueueServiceTests {
 
         assert queue instanceof Map
         assert Queue.collection.count() == 3
-        assert Message.collection.count() == 1               
+        assert Message.collection.count() == 1
     }
 
   @Test
@@ -140,27 +140,27 @@ class QueueServiceTests {
 **/
   @Test
     void testModifyPermissionsSuccess() {
-        def messageData = [ messageData: 
-                                [ permissions :                                     
-                                    [ 
+        def messageData = [ messageData:
+                                [ permissions :
+                                    [
                                         canRead : [add : ["epierce","chance"], remove : [] ],
                                         canWrite : [add : ["chance"], remove : [] ],
                                         canAdmin : [add : ["epierce"], remove : [] ]
                                     ]
                                 ]
                             ]
-                            
+
         def queue = queueService.modifyPermissions('it-msgsvcadm', 'TestQueue1', messageData)
         assert queue.canRead.add == 2
         assert queue.canWrite.add == 1
-        assert queue.canAdmin.add == 1        
+        assert queue.canAdmin.add == 1
     }
 
   @Test
     void testModifyPermissionsFailQueueMissing() {
-        def messageData = [ messageData: 
-                                [ permissions :                                     
-                                    [ 
+        def messageData = [ messageData:
+                                [ permissions :
+                                    [
                                         canRead : [add : ["epierce","chance"], remove : [] ],
                                         canWrite : [add : ["chance"], remove : [] ],
                                         canAdmin : [add : ["epierce"], remove : [] ]
@@ -168,14 +168,14 @@ class QueueServiceTests {
                                 ]
                             ]
         def queue = queueService.modifyPermissions('it-msgsvcadm', 'BadQueueName', [messageData: [name: "NewQueueName"]])
-        assert queue == "QueueNotFound"        
+        assert queue == "QueueNotFound"
     }
 
   @Test
     void testModifyPermissionsFailNotAuthorized() {
-        def messageData = [ messageData: 
-                                [ permissions :                                     
-                                    [ 
+        def messageData = [ messageData:
+                                [ permissions :
+                                    [
                                         canRead : [add : ["epierce","chance"], remove : [] ],
                                         canWrite : [add : ["chance"], remove : [] ],
                                         canAdmin : [add : ["epierce"], remove : [] ]
@@ -183,14 +183,14 @@ class QueueServiceTests {
                                 ]
                             ]
         def queue = queueService.modifyPermissions('test-user', 'TestQueue1', [messageData: [name: "NewQueueName2"]])
-        assert queue == "NotAuthorized"        
+        assert queue == "NotAuthorized"
     }
 
   @Test
     void testModifyPermissionsFailNoMessageData() {
         def messageData = [ messageData: []]
         def queue = queueService.modifyPermissions('it-msgsvcadm', 'TestQueue1', [messageData: [name: "NewQueueName2"]])
-        assert queue == "NoPermissionData"        
+        assert queue == "NoPermissionData"
     }
 /**
     getNextMessage Tests
@@ -264,8 +264,8 @@ class QueueServiceTests {
 **/
   @Test
     void testCreateQueueMessage() {
-        def queueMessage = queueService.createQueueMessage('it-msgsvcadm', 'TestQueue1', [ apiVersion:1, createProg: "serviceTest2","messageData" : [mydata: "new message", mydata2: "blah"] ])     
-       
+        def queueMessage = queueService.createQueueMessage('it-msgsvcadm', 'TestQueue1', [ apiVersion:1, createProg: "serviceTest2","messageData" : [mydata: "new message", mydata2: "blah"] ])
+
         assert queueMessage.createProg == "serviceTest2"
         assert queueMessage.messageData.mydata == "new message"
         assert queueMessage.messageDetails.messageContainer.type == "queue"
@@ -274,35 +274,35 @@ class QueueServiceTests {
 
   @Test
     void testCreateQueueMessageNotAuthorized() {
-        def queueMessage = queueService.createQueueMessage('test-user', 'TestQueue1', [ apiVersion:1, createProg: "serviceTest2","messageData" : [mydata: "new message", mydata2: "blah"] ])     
+        def queueMessage = queueService.createQueueMessage('test-user', 'TestQueue1', [ apiVersion:1, createProg: "serviceTest2","messageData" : [mydata: "new message", mydata2: "blah"] ])
         assert queueMessage == "NotAuthorized"
         assert Queue.collection.count() == 4
     }
 
   @Test
     void testCreateQueueMessageNotFound() {
-        def queueMessage = queueService.createQueueMessage('it-msgsvcadm', 'BadQueueName', [ apiVersion:1, createProg: "serviceTest2","messageData" : [mydata: "new message", mydata2: "blah"] ])     
+        def queueMessage = queueService.createQueueMessage('it-msgsvcadm', 'BadQueueName', [ apiVersion:1, createProg: "serviceTest2","messageData" : [mydata: "new message", mydata2: "blah"] ])
         assert queueMessage == "QueueNotFound"
         assert Queue.collection.count() == 4
     }
 
   @Test
     void testCreateQueueMessageNoAPI() {
-        def queueMessage = queueService.createQueueMessage('it-msgsvcadm', 'TestQueue1', [ createProg: "serviceTest2","messageData" : [mydata: "new message", mydata2: "blah"] ])     
+        def queueMessage = queueService.createQueueMessage('it-msgsvcadm', 'TestQueue1', [ createProg: "serviceTest2","messageData" : [mydata: "new message", mydata2: "blah"] ])
         assert queueMessage == "NoApiVersion"
         assert Queue.collection.count() == 4
     }
 
   @Test
     void testCreateQueueMessageNoCreateProgram() {
-        def queueMessage = queueService.createQueueMessage('it-msgsvcadm', 'TestQueue1', [ apiVersion:1, "messageData" : [mydata: "new message", mydata2: "blah"] ])     
+        def queueMessage = queueService.createQueueMessage('it-msgsvcadm', 'TestQueue1', [ apiVersion:1, "messageData" : [mydata: "new message", mydata2: "blah"] ])
         assert queueMessage == "NoCreateProgram"
         assert Queue.collection.count() == 4
     }
 
   @Test
     void testCreateQueueMessageNoMessage() {
-        def queueMessage = queueService.createQueueMessage('it-msgsvcadm', 'TestQueue1', [ apiVersion:1, createProg: "serviceTest2" ])     
+        def queueMessage = queueService.createQueueMessage('it-msgsvcadm', 'TestQueue1', [ apiVersion:1, createProg: "serviceTest2" ])
         assert queueMessage == "NoMessageData"
         assert Queue.collection.count() == 4
     }
@@ -315,7 +315,7 @@ class QueueServiceTests {
         def message = queueService.createQueueMessage('it-msgsvcadm', "TestQueue2",[ apiVersion:1, createProg: "serviceTest2","messageData" : [mydata: "new message", mydata2: "blah"] ])
         def queueMessage = queueService.viewMessage('it-msgsvcadm', "TestQueue2", message.id as String)
         assert queueMessage.messageData.mydata == "new message"
-    } 
+    }
 
   @Test
     void testViewMessageNotAuthorized() {
@@ -343,18 +343,18 @@ class QueueServiceTests {
         def message = queueService.createQueueMessage('it-msgsvcadm', "TestQueue2",[ apiVersion:1, createProg: "serviceTest2","messageData" : [mydata: "new message", mydata2: "blah"] ])
         def queueMessage = queueService.viewMessage('it-msgsvcadm', "TestQueue1", message.id as String)
         assert queueMessage == "WrongQueueName"
-    }    
+    }
 
 /**
     deleteMessages Tests
 **/
-  @Test  
-    void testDeleteMessage() {        
+  @Test
+    void testDeleteMessage() {
         def message = queueService.createQueueMessage('it-msgsvcadm', "TestQueue2",[ apiVersion:1, createProg: "serviceTest2","messageData" : [mydata: "new message", mydata2: "blah"] ])
-        def queueMessage = queueService.deleteMessage('it-msgsvcadm', "TestQueue2", message.id as String)     
+        def queueMessage = queueService.deleteMessage('it-msgsvcadm', "TestQueue2", message.id as String)
         assert queueMessage.messageData.mydata == "new message"
         assert Message.collection.count() == 4
-    } 
+    }
 
   @Test
     void testDeleteMessageNotAuthorized() {
@@ -382,6 +382,6 @@ class QueueServiceTests {
         def message = queueService.createQueueMessage('it-msgsvcadm', "TestQueue2",[ apiVersion:1, createProg: "serviceTest2","messageData" : [mydata: "new message", mydata2: "blah"] ])
         def queueMessage = queueService.deleteMessage('it-msgsvcadm', "TestQueue1", message.id as String)
         assert queueMessage == "WrongQueueName"
-    }        
+    }
 
 }

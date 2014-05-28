@@ -1,11 +1,11 @@
 package edu.usf.cims.MessageService
 
 import grails.converters.*
-import grails.plugins.springsecurity.Secured
+import grails.plugin.springsecurity.annotation.Secured
 import groovy.time.TimeCategory
 
 class TopicController {
-    def topicService  
+    def topicService
     def auditService
     def springSecurityService
 
@@ -19,7 +19,7 @@ class TopicController {
                         return request.JSON
                     }
                     xml {
-                        return request.XML 
+                        return request.XML
                     }
                     json {
                         return request.JSON
@@ -28,7 +28,7 @@ class TopicController {
             }
         } catch(Exception e) {
             renderError(400, 'Message data is invalid')
-        } 
+        }
     }
 
     def renderResponse (responseText) {
@@ -39,7 +39,7 @@ class TopicController {
                 }else{
                   //Handle JSONP
                   if (params.callback) {
-                    render(contentType: "text/javascript", encoding: "UTF-8", text: "${params.callback}(${responseText.encodeAsJSON()})")       
+                    render(contentType: "text/javascript", encoding: "UTF-8", text: "${params.callback}(${responseText.encodeAsJSON()})")
                   } else {
                     render responseText as JSON
                   }
@@ -51,7 +51,7 @@ class TopicController {
             json {
               //Handle JSONP
               if (params.callback) {
-                render(contentType: "text/javascript", encoding: "UTF-8", text: "${params.callback}(${responseText.encodeAsJSON()})")       
+                render(contentType: "text/javascript", encoding: "UTF-8", text: "${params.callback}(${responseText.encodeAsJSON()})")
               } else {
                 render responseText as JSON
               }
@@ -77,25 +77,25 @@ class TopicController {
             json {
               //Handle JSONP
               if (params.callback) {
-                render(contentType: "text/javascript", encoding: "UTF-8", text: "${params.callback}(${responseText.encodeAsJSON()})")       
+                render(contentType: "text/javascript", encoding: "UTF-8", text: "${params.callback}(${responseText.encodeAsJSON()})")
               } else {
-                render responseText as JSON
+                render errorText as JSON
               }
             }
         }
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def listTopics = {
+    def listTopics() {
       def username = springSecurityService.authentication.name
       def ipAddress = request.getRemoteAddr()
-      def topicResult = topicService.listTopics(params.pattern) 
-      
+      def topicResult = topicService.listTopics(params.pattern)
+
       if (topicResult instanceof List){
           def resultMap = [count:topicResult.size,topics:topicResult]
           auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'LIST_TOPICS'])
-          renderResponse resultMap  
-          return 
+          renderResponse resultMap
+          return
       } else {
           switch(topicResult) {
               default:
@@ -107,12 +107,12 @@ class TopicController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def createTopic = { 
+    def createTopic() {
         def username = springSecurityService.authentication.name
         def ipAddress = request.getRemoteAddr()
         def message = getMessageBody()
 
-        if (message){      
+        if (message){
             def topic = topicService.addTopic(username, message)
             if(topic instanceof Map) {
                 auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'CREATE_TOPIC', containerName: message.messageData.name, containerType: 'TOPIC'])
@@ -127,16 +127,16 @@ class TopicController {
                     break
                   case "validator.invalid":
                     reason.code = 400
-                    reason.message = "Create failed: ${message.messageData.name} invalid name!"    
+                    reason.message = "Create failed: ${message.messageData.name} invalid name!"
                   break
                   default:
                     reason.code = 400
                     reason.message = 'Topic could not be created'
                   break
               }
-              
+
               auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'CREATE_TOPIC_ERROR', containerName: message.messageData.name, containerType: 'TOPIC', reason: reason.message])
-              renderError(reason.code, reason.message) 
+              renderError(reason.code, reason.message)
               return
             }
         } else {
@@ -148,7 +148,7 @@ class TopicController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def modifyTopic = {
+    def modifyTopic() {
         def username = springSecurityService.authentication.name
         def ipAddress = request.getRemoteAddr()
 
@@ -157,12 +157,12 @@ class TopicController {
             def result = ""
 
             //Are we updating the permissions or the topic settings?
-            if (message?.messageData?.permissions) { 
+            if (message?.messageData?.permissions) {
                 result = topicService.modifyPermissions(username, params.name, message)
             } else {
                 result = topicService.modifyTopic(username, params.name, message)
             }
-                
+
             if(result instanceof Map) {
                 if (result.canRead){
                     //This was a permissions modification
@@ -213,8 +213,8 @@ class TopicController {
         }
     }
 
-    @Secured(['ROLE_ITMESSAGESERVICEUSER'])    
-    def deleteTopic = {
+    @Secured(['ROLE_ITMESSAGESERVICEUSER'])
+    def deleteTopic() {
       def username = springSecurityService.authentication.name
       def ipAddress = request.getRemoteAddr()
       def topic = topicService.deleteTopic(username, params.name)
@@ -222,7 +222,7 @@ class TopicController {
       if(topic instanceof Map) {
         auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'DELETE_TOPIC', containerName: params.name, containerType: 'TOPIC'])
         renderResponse([count:1,topics:topic])
-        return   
+        return
       } else {
         def reason = [:]
         switch(topic) {
@@ -242,24 +242,24 @@ class TopicController {
         auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'DELETE_TOPIC_ERROR', containerName: params.name, containerType: 'TOPIC', reason: reason.message])
         renderError(reason.code, reason.message)
         return
-          
+
       }
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def listTopicMessages = {
+    def listTopicMessages() {
         def username = springSecurityService.authentication.name
         def ipAddress = request.getRemoteAddr()
 
         def topicMessages = topicService.listTopicMessages(username, params.name)
         if(topicMessages instanceof List) {
             def resultMap = [count:topicMessages.size, messages:topicMessages]
-            
-            auditService.writeAuditEntry([  actor: username, 
-                                            ipAddress: ipAddress, 
-                                            action: 'VIEW_MESSAGE', 
-                                            containerName: params.name, 
-                                            containerType: 'TOPIC', 
+
+            auditService.writeAuditEntry([  actor: username,
+                                            ipAddress: ipAddress,
+                                            action: 'VIEW_MESSAGE',
+                                            containerName: params.name,
+                                            containerType: 'TOPIC',
                                             details:[ messageCount: topicMessages.size,
                                                       messageSize: resultMap.toString().length() ]
                                                     ])
@@ -270,10 +270,10 @@ class TopicController {
           def reason = [:]
           switch(topicMessages) {
             case "NoResults":
-                auditService.writeAuditEntry([  actor: username, 
-                                                ipAddress: ipAddress, 
-                                                action: 'VIEW_MESSAGE', 
-                                                containerName: params.name, 
+                auditService.writeAuditEntry([  actor: username,
+                                                ipAddress: ipAddress,
+                                                action: 'VIEW_MESSAGE',
+                                                containerName: params.name,
                                                 containerType: 'TOPIC' ])
                 renderResponse([count:0,messages:[]])
                 return
@@ -294,7 +294,7 @@ class TopicController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def filterTopicMessages = {
+    def filterTopicMessages() {
         def username = springSecurityService.authentication.name
         def ipAddress = request.getRemoteAddr()
 
@@ -310,30 +310,30 @@ class TopicController {
         }
 
         //Valid start time is required
-        if(startTime){ 
+        if(startTime){
             def topicMessages = topicService.filterTopicMessages(username, params.name,startTime,endTime)
             if(topicMessages instanceof List) {
                 def resultMap = [count:topicMessages.size, messages:topicMessages]
-                auditService.writeAuditEntry([  actor: username, 
-                                                ipAddress: ipAddress, 
-                                                action: 'VIEW_MESSAGE', 
-                                                containerName: params.name, 
-                                                containerType: 'TOPIC', 
+                auditService.writeAuditEntry([  actor: username,
+                                                ipAddress: ipAddress,
+                                                action: 'VIEW_MESSAGE',
+                                                containerName: params.name,
+                                                containerType: 'TOPIC',
                                                 details:[ messageCount: topicMessages.size,
                                                           messageSize: resultMap.toString().length() ]
-                                                      ])              
-                
+                                                      ])
+
                 log.debug("Listing ${topicMessages.size} messages from topic ${params.name}")
-                renderResponse resultMap    
-                return                      
+                renderResponse resultMap
+                return
             } else {
               def reason = [:]
               switch(topicMessages) {
                 case "NoResults":
-                    auditService.writeAuditEntry([  actor: username, 
-                                                    ipAddress: ipAddress, 
-                                                    action: 'VIEW_MESSAGE', 
-                                                    containerName: params.name, 
+                    auditService.writeAuditEntry([  actor: username,
+                                                    ipAddress: ipAddress,
+                                                    action: 'VIEW_MESSAGE',
+                                                    containerName: params.name,
                                                     containerType: 'TOPIC' ])
                     renderResponse([count:0,messages:[]])
                     return
@@ -355,30 +355,30 @@ class TopicController {
             renderError(reason.code, reason.message)
             return
         }
-    } 
+    }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def createTopicMessage = {
+    def createTopicMessage() {
       def username = springSecurityService.authentication.name
       def ipAddress = request.getRemoteAddr()
       def message = getMessageBody()
 
-      if (message) { 
+      if (message) {
         if (! message.apiVersion) message.apiVersion = 1
         def topicMessages = topicService.createTopicMessage(username, params.name,message)
-    
+
         if(topicMessages instanceof Map) {
-          auditService.writeAuditEntry([  actor: username, 
-                                      ipAddress: ipAddress, 
-                                      action: 'CREATE_MESSAGE', 
-                                      containerName: params.name, 
-                                      containerType: 'TOPIC', 
+          auditService.writeAuditEntry([  actor: username,
+                                      ipAddress: ipAddress,
+                                      action: 'CREATE_MESSAGE',
+                                      containerName: params.name,
+                                      containerType: 'TOPIC',
                                       details:[ messageId: topicMessages.messageId,
                                                 messageSize: topicMessages.toString().length() ]
                                       ])
 
             renderResponse([count:1,messages:topicMessages])
-            return                           
+            return
         } else {
           def reason = [:]
           switch(topicMessages) {
@@ -388,7 +388,7 @@ class TopicController {
             break
             case "NotAuthorized":
               reason.code = 403
-              reason.message = 'You are not authorized to perform this operation'              
+              reason.message = 'You are not authorized to perform this operation'
             break
             case 'NoMessageData':
               reason.code = 400
@@ -420,23 +420,23 @@ class TopicController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def viewMessage = {
+    def viewMessage() {
       def username = springSecurityService.authentication.name
       def ipAddress = request.getRemoteAddr()
       if (params.id){
         def topicMessage = topicService.viewMessage(username, params.name, params.id)
         if(topicMessage instanceof Map) {
-          auditService.writeAuditEntry([  actor: username, 
-                                          ipAddress: ipAddress, 
-                                          action: 'VIEW_MESSAGE', 
-                                          containerName: params.name, 
-                                          containerType: 'TOPIC', 
+          auditService.writeAuditEntry([  actor: username,
+                                          ipAddress: ipAddress,
+                                          action: 'VIEW_MESSAGE',
+                                          containerName: params.name,
+                                          containerType: 'TOPIC',
                                           details:[ messageId: topicMessage.messageId,
                                                     messageSize: topicMessage.toString().length(),
                                                     messageAge: TimeCategory.minus( new Date(), topicMessage.createTime) ]
                                       ])
             renderResponse([count:1,messages:topicMessage])
-            return                          
+            return
         } else {
           def reason = [:]
           switch(topicMessage) {
@@ -475,7 +475,7 @@ class TopicController {
 
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def deleteMessage = {
+    def deleteMessage() {
       def username = springSecurityService.authentication.name
       def ipAddress = request.getRemoteAddr()
       if (params.id){
@@ -483,7 +483,7 @@ class TopicController {
         if(topicMessage instanceof Map) {
           auditService.writeAuditEntry([actor: username, ipAddress: ipAddress, action: 'DELETE_MESSAGE', containerName: params.name, containerType: 'TOPIC', details:[ messageId: params.id]])
           renderResponse([count:1,messages:topicMessage])
-          return                          
+          return
         } else {
           def reason = [:]
           switch(topicMessage) {
@@ -520,11 +520,11 @@ class TopicController {
       }
 
     }
-    
+
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def requestError = {
+    def requestError() {
         renderError(405, "UnsupportedHttpVerb: ${request.method} not allowed")
         return
     }
-    
+
 }

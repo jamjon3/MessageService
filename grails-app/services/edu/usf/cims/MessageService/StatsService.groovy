@@ -19,9 +19,9 @@ class StatsService {
       def queueCounts = [:]
       Queue.findAll().each { queue ->
         queueCounts[queue.name] = [:]
-          queueCounts[queue.name] = getQueueCounts(queue.name)        
+          queueCounts[queue.name] = getQueueCounts(queue.name)
       }
-     
+
       return queueCounts
     }
 
@@ -32,7 +32,7 @@ class StatsService {
       }
       return topicCounts
     }
-    
+
     def countMessages(containerType = null, containerName = null, status = null){
        def searchParams = getSearchParams(containerType, containerName, status)
        return Message.collection.count(searchParams)
@@ -42,17 +42,17 @@ class StatsService {
       if (! name) return getAllQueueCounts()
       def queueCounts = [:]
       queueCounts.messages = countMessages('queue', name, statusType)
-      
+
       if (! statusType) {
         queueCounts.status = [:]
-        statusList.each { 
+        statusList.each {
           queueCounts.status[it] = countMessages('queue', name, it)
         }
       }
 
       return queueCounts
     }
-    
+
     def getTopicCounts(name){
       if (! name) return getAllTopicCounts()
       def topicCounts = [:]
@@ -65,7 +65,7 @@ class StatsService {
                       cols:[
                           [id:"type", label:"Container Type", type:"string"],
                           [id:"msg", label:"Messages", type:"number"]],
-                      rows:[ 
+                      rows:[
                         [c:
                           [[v:"Queue"],[v:0]]],
                         [c:
@@ -132,10 +132,10 @@ class StatsService {
             return reducedObject;
           };
         """,
-        //Name of collection to write results to 
+        //Name of collection to write results to
         "",
         //Return result instead of writing it to a collection
-        OutputType.INLINE,  
+        OutputType.INLINE,
         //Query that defines the input to the Map Reduce Function
         searchParams
         )
@@ -160,11 +160,11 @@ class StatsService {
     def getAggregateMessageCount(containerType, timeScale, startTime, endTime){
       return getAggregateMessageCount(containerType, null, timeScale, startTime, endTime)
     }
-    
+
     def getAggregateMessageCount(containerType, containerName, timeScale, startTime, endTime){
        def searchParams = [  auditTime : [ $gte : startTime, $lt : endTime ] ]
         if(containerType) searchParams.containerType = containerType
-        if(containerName) searchParams.containerName = containerName              
+        if(containerName) searchParams.containerName = containerName
 
        def groupParams = getGroupParams(['a': '$action'], timeScale)
 
@@ -219,11 +219,11 @@ class StatsService {
     def getAggregateDataTransfer(containerType, timeScale, startTime, endTime){
       return getAggregateDataTransfer(containerType, null, timeScale, startTime, endTime)
     }
-    
+
     def getAggregateDataTransfer(containerType, containerName, timeScale, startTime, endTime){
        def searchParams = [ auditTime : [ $gte : startTime, $lt : endTime ] ]
         if(containerType) searchParams.containerType = containerType
-        if(containerName) searchParams.containerName = containerName              
+        if(containerName) searchParams.containerName = containerName
 
        def groupParams = getGroupParams(['a': '$action'], timeScale)
 
@@ -297,10 +297,10 @@ class StatsService {
             return reducedObject;
           };
         """,
-        //Name of collection to write results to 
+        //Name of collection to write results to
         "",
         //Return result instead of writing it to a collection
-        OutputType.INLINE,  
+        OutputType.INLINE,
         //Query that defines the input to the Map Reduce Function
         searchParams
         )
@@ -339,7 +339,7 @@ class StatsService {
     }
 
     private def getGroupParams(groupParams, timeScale){
-        
+
         def params = [:]
 
         switch(timeScale) {
@@ -361,7 +361,7 @@ class StatsService {
           case 'second':
             params = ['y': '$datetime.y','m': '$datetime.m','d': '$datetime.d','h': '$datetime.h', 'min': '$datetime.min', 'sec': '$datetime.sec']
           break
-          
+
         }
         return groupParams.plus(params)
     }
@@ -388,7 +388,7 @@ class StatsService {
           case 'second':
             params = [year: data.y, month: data.m - 1, day: data.d, hour: data.h, minute: data.min, second: data.sec]
           break
-          
+
         }
         return  "Date(${params.year}, ${params.month}, ${params.day}, ${params.hour}, ${params.minute}, ${params.second})"
     }

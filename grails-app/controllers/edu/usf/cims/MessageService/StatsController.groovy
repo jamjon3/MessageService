@@ -1,7 +1,7 @@
 package edu.usf.cims.MessageService
 
 import grails.converters.*
-import grails.plugins.springsecurity.Secured
+import grails.plugin.springsecurity.annotation.Secured
 
 class StatsController {
     def statsService
@@ -16,13 +16,13 @@ class StatsController {
                     message = request.JSON
                 }
                 xml {
-                    message = request.XML 
+                    message = request.XML
                 }
                 json {
                     message = request.JSON
                 }
             }
-        } 
+        }
     }
 
     def renderResponse (responseText) {
@@ -33,7 +33,7 @@ class StatsController {
                 }else{
                   //Handle JSONP
                   if (params.callback) {
-                    render(contentType: "text/javascript", encoding: "UTF-8", text: "${params.callback}(${responseText.encodeAsJSON()})")       
+                    render(contentType: "text/javascript", encoding: "UTF-8", text: "${params.callback}(${responseText.encodeAsJSON()})")
                   } else {
                     render responseText as JSON
                   }
@@ -45,7 +45,7 @@ class StatsController {
             json {
               //Handle JSONP
               if (params.callback) {
-                render(contentType: "text/javascript", encoding: "UTF-8", text: "${params.callback}(${responseText.encodeAsJSON()})")       
+                render(contentType: "text/javascript", encoding: "UTF-8", text: "${params.callback}(${responseText.encodeAsJSON()})")
               } else {
                 render responseText as JSON
               }
@@ -75,15 +75,15 @@ class StatsController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def index = {}
+    def index() {}
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def combinedStats = {
+    def combinedStats() {
             // Yesterday
       def startTime = new Date() - 1
       // Now
       def endTime = new Date()
-      
+
       try {
         if (params.startTime) startTime = new Date().parse("yyyy-MM-dd'T'HH:mm:ssz", "${params.startTime}-0000")
         if (params.endTime) endTime = new Date().parse("yyyy-MM-dd'T'HH:mm:ssz", "${params.endTime}-0000")
@@ -100,7 +100,7 @@ class StatsController {
       results.timeScale = timeScale
 
       switch(statType) {
-        case 'dashboard':  
+        case 'dashboard':
           results.count = statsService.countAllMessages()
           results.oldestMessageData = statsService.getMessageByAge(null, null, null, 1)
           results.newestMessageData = statsService.getMessageByAge(null, null, null, -1)
@@ -134,12 +134,12 @@ class StatsController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def queueStats = {
+    def queueStats() {
             // Yesterday
       def startTime = new Date() - 1
       // Now
       def endTime = new Date()
-      
+
       try {
         if (params.startTime) startTime = new Date().parse("yyyy-MM-dd'T'HH:mm:ssz", "${params.startTime}-0000")
         if (params.endTime) endTime = new Date().parse("yyyy-MM-dd'T'HH:mm:ssz", "${params.endTime}-0000")
@@ -182,12 +182,12 @@ class StatsController {
     }
 
     @Secured(['ROLE_ITMESSAGESERVICEUSER'])
-    def topicStats = {
+    def topicStats() {
       // Yesterday
       def startTime = new Date() - 1
       // Now
       def endTime = new Date()
-      
+
       try {
         if (params.startTime) startTime = new Date().parse("yyyy-MM-dd'T'HH:mm:ssz", "${params.startTime}-0000")
         if (params.endTime) endTime = new Date().parse("yyyy-MM-dd'T'HH:mm:ssz", "${params.endTime}-0000")
@@ -232,7 +232,7 @@ class StatsController {
 
     **/
     @Secured(['ROLE_ITMESSAGESERVICEADMIN'])
-    def requestError = {
+    def requestError() {
         renderError(405, "UnsupportedHttpVerb: ${request.method} not allowed")
     }
 }

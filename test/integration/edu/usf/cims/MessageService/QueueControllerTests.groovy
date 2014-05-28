@@ -10,14 +10,14 @@ class QueueControllerTests extends GroovyTestCase {
     def stubSpringSecurityService = new StubSpringSecurityService()
 
     @Before
-    void setup() {
+    void setUp() {
         //This runs before each test
         def queue = new Queue([name: "TestQueue1"])
-        queue.save(flush:true) 
+        queue.save(flush:true)
 
         def queue2 = new Queue([name: "TestQueue2"])
         queue2.save(flush:true)
-        
+
         new Queue([name: "TestQueue3"]).save(flush:true)
         new Queue([name: "netidChange"]).save(flush:true)
 
@@ -28,7 +28,7 @@ class QueueControllerTests extends GroovyTestCase {
     }
 
     @After
-    void tearDown() {       
+    void tearDown() {
         //This runs after each test
         //Remove data from test database
         Queue.collection.drop()
@@ -36,7 +36,7 @@ class QueueControllerTests extends GroovyTestCase {
     }
 
     @Test
-    void testListQueues() {    
+    void testListQueues() {
         def controller = new QueueController()
         controller.queueService = queueService
         controller.springSecurityService = stubSpringSecurityService
@@ -45,10 +45,10 @@ class QueueControllerTests extends GroovyTestCase {
         controller.request.method = "GET"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
-        
+
         controller.listQueues()
         assert controller.response.status == 200
-        assert controller.response.contentAsString == '{"count":4,"queues":[{"name":"TestQueue1","stats":{"messages":0,"status":{"in-progress":0,"pending":0,"error":0}}},{"name":"TestQueue2","stats":{"messages":0,"status":{"in-progress":0,"pending":0,"error":0}}},{"name":"TestQueue3","stats":{"messages":0,"status":{"in-progress":0,"pending":0,"error":0}}},{"name":"netidChange","stats":{"messages":0,"status":{"in-progress":0,"pending":0,"error":0}}}]}'
+        assert controller.response.contentAsString == '{"count":4,"queues":[{"name":"TestQueue1"},{"name":"TestQueue2"},{"name":"TestQueue3"},{"name":"netidChange"}]}'
     }
 
   @Test
@@ -64,11 +64,11 @@ class QueueControllerTests extends GroovyTestCase {
         controller.params.return = "XML"
         controller.params.pattern = "^(netid).*"
         controller.request.method = "GET"
-        
+
         controller.listQueues()
         assert controller.response.status == 200
-        
-        assert controller.response.contentAsString =~ /<\?xml version="1.0" encoding="UTF-8"\?><map><entry key="count">1<\/entry><entry key="queues"><map><entry key="name">netidChange<\/entry><entry key="stats"><entry key="messages">0<\/entry><entry key="status"><entry key="in-progress">0<\/entry><entry key="pending">0<\/entry><entry key="error">0<\/entry><\/entry><\/entry><\/map><\/entry><\/map>/
+
+        assert controller.response.contentAsString == '<?xml version="1.0" encoding="UTF-8"?><map><entry key="count">1</entry><entry key="queues"><map><entry key="name">netidChange</entry></map></entry></map>'
     }
 
   @Test
@@ -85,9 +85,9 @@ class QueueControllerTests extends GroovyTestCase {
         controller.request.content = '{"messageData": {"name": "newQueue"} }'
 
         controller.createQueue()
-        
+
         assert controller.response.status == 200
-        assert controller.response.contentAsString == '{"count":1,"queues":{"name":"newQueue","stats":{"messages":0,"status":{"in-progress":0,"pending":0,"error":0}}}}'
+        assert controller.response.contentAsString == '{"count":1,"queues":{"name":"newQueue"}}'
     }
 
   @Test
@@ -140,7 +140,7 @@ class QueueControllerTests extends GroovyTestCase {
 
         controller.modifyQueue()
         assert controller.response.status == 200
-        assert controller.response.contentAsString == '{"count":1,"queues":{"name":"oldQueue","stats":{"messages":0,"status":{"in-progress":0,"pending":0,"error":0}}}}'
+        assert controller.response.contentAsString == '{"count":1,"queues":{"name":"oldQueue"}}'
     }
 
   @Test
@@ -185,7 +185,7 @@ class QueueControllerTests extends GroovyTestCase {
         controller.queueService = queueService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
-        
+
         controller.request.method = "PUT"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
@@ -203,7 +203,7 @@ class QueueControllerTests extends GroovyTestCase {
         controller.queueService = queueService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("test-user")
-        
+
         controller.request.method = "PUT"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
@@ -221,13 +221,13 @@ class QueueControllerTests extends GroovyTestCase {
         controller.queueService = queueService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
-        
+
         controller.request.method = "PUT"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
         controller.params.name = "TestQueue1"
         controller.request.content = '{"messageData":{"permissions":{"canRead":{"add":["epierce","chance"],"remove":[]},"canWrite":{"add":["chance"],"remove":[]},"canAdmin":{"add":["epierce"],"remove":[]}}}}'
-        
+
         controller.modifyQueue()
         assert controller.response.status == 200
         assert controller.response.contentAsString == '{"canRead":{"add":2,"remove":0},"canWrite":{"add":1,"remove":0},"canAdmin":{"add":1,"remove":0}}'
@@ -239,13 +239,13 @@ class QueueControllerTests extends GroovyTestCase {
         controller.queueService = queueService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
-        
+
         controller.request.method = "PUT"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
         controller.params.name = "TestQueue11"
         controller.request.content = '{"messageData":{"permissions":{"canRead":{"add":["epierce","chance"],"remove":[]},"canWrite":{"add":["chance"],"remove":[]},"canAdmin":{"add":["epierce"],"remove":[]}}}}'
-        
+
         controller.modifyQueue()
         assert controller.response.status == 404
         assert controller.response.contentAsString == '{"error":"Update failed: TestQueue11 does not exist"}'
@@ -257,13 +257,13 @@ class QueueControllerTests extends GroovyTestCase {
         controller.queueService = queueService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
-        
+
         controller.request.method = "PUT"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
         controller.params.name = "TestQueue1"
         controller.request.content = ''
-        
+
         controller.modifyQueue()
         assert controller.response.status == 400
         assert controller.response.contentAsString == '{"error":"Message data required"}'
@@ -275,13 +275,13 @@ class QueueControllerTests extends GroovyTestCase {
         controller.queueService = queueService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("test-user")
-        
+
         controller.request.method = "PUT"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
         controller.params.name = "TestQueue1"
         controller.request.content = '{"messageData":{"permissions":{"canRead":{"add":["epierce","chance"],"remove":[]},"canWrite":{"add":["chance"],"remove":[]},"canAdmin":{"add":["epierce"],"remove":[]}}}}'
-        
+
         controller.modifyQueue()
         assert controller.response.status == 403
         assert controller.response.contentAsString == '{"error":"You are not authorized to perform this operation"}'
@@ -301,7 +301,7 @@ class QueueControllerTests extends GroovyTestCase {
 
         controller.deleteQueue()
         assert controller.response.status == 200
-        assert controller.response.contentAsString == '{"count":1,"queues":{"name":"TestQueue1","stats":{"messages":0,"status":{"in-progress":0,"pending":0,"error":0}}}}'
+        assert controller.response.contentAsString == '{"count":1,"queues":{"name":"TestQueue1"}}'
     }
 
   @Test
@@ -327,7 +327,7 @@ class QueueControllerTests extends GroovyTestCase {
         controller.queueService = queueService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("test-user")
-        
+
         controller.request.method = "DELETE"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
@@ -344,13 +344,13 @@ class QueueControllerTests extends GroovyTestCase {
         controller.queueService = queueService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
- 
+
         controller.params.name = "TestQueue1"
         controller.request.method = "GET"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
         controller.request.remoteAddr = "127.0.0.1"
- 
+
         controller.getNextMessage()
         assert controller.response.status == 200
         assert controller.response.contentAsString =~ /.*taken.*ipAddr.*message1.*/
@@ -362,12 +362,12 @@ class QueueControllerTests extends GroovyTestCase {
         controller.queueService = queueService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
- 
+
         controller.params.name = "TestQueue11"
         controller.request.method = "GET"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
- 
+
         controller.getNextMessage()
         assert controller.response.status == 404
         assert controller.response.contentAsString == '{"error":"ResourceNotFound: TestQueue11 does not exist"}'
@@ -379,12 +379,12 @@ class QueueControllerTests extends GroovyTestCase {
         controller.queueService = queueService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("test-user")
- 
+
         controller.params.name = "TestQueue1"
         controller.request.method = "GET"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
- 
+
         controller.getNextMessage()
         assert controller.response.status == 403
         assert controller.response.contentAsString == '{"error":"You are not authorized to perform this operation"}'
@@ -396,14 +396,14 @@ class QueueControllerTests extends GroovyTestCase {
         controller.queueService = queueService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
- 
+
         controller.params.name = "TestQueue1"
         controller.params.count = 10
         controller.request.method = "GET"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
         controller.request.remoteAddr = "127.0.0.1"
- 
+
         controller.peek()
         assert controller.response.status == 200
         assert controller.response.contentAsString =~ /.*message1.*message3.*/
@@ -415,12 +415,12 @@ class QueueControllerTests extends GroovyTestCase {
         controller.queueService = queueService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
- 
+
         controller.params.name = "TestQueue11"
         controller.request.method = "GET"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
- 
+
         controller.peek()
         assert controller.response.status == 404
         assert controller.response.contentAsString == '{"error":"ResourceNotFound: TestQueue11 does not exist"}'
@@ -432,12 +432,12 @@ class QueueControllerTests extends GroovyTestCase {
         controller.queueService = queueService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("test-user")
- 
+
         controller.params.name = "TestQueue1"
         controller.request.method = "GET"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
- 
+
         controller.peek()
         assert controller.response.status == 403
         assert controller.response.contentAsString == '{"error":"You are not authorized to perform this operation"}'
@@ -449,13 +449,13 @@ class QueueControllerTests extends GroovyTestCase {
         controller.queueService = queueService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
- 
+
         controller.params.name = "TestQueue1"
         controller.request.method = "GET"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
         controller.request.remoteAddr = "127.0.0.1"
- 
+
         controller.listInProgressMessages()
         assert controller.response.status == 200
         assert controller.response.contentAsString =~ /.*message2.*/
@@ -467,12 +467,12 @@ class QueueControllerTests extends GroovyTestCase {
         controller.queueService = queueService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
- 
+
         controller.params.name = "TestQueue11"
         controller.request.method = "GET"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
- 
+
         controller.listInProgressMessages()
         assert controller.response.status == 404
         assert controller.response.contentAsString == '{"error":"ResourceNotFound: TestQueue11 does not exist"}'
@@ -484,12 +484,12 @@ class QueueControllerTests extends GroovyTestCase {
         controller.queueService = queueService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("test-user")
- 
+
         controller.params.name = "TestQueue1"
         controller.request.method = "GET"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
- 
+
         controller.listInProgressMessages()
         assert controller.response.status == 403
         assert controller.response.contentAsString == '{"error":"You are not authorized to perform this operation"}'
@@ -554,7 +554,7 @@ class QueueControllerTests extends GroovyTestCase {
         controller.queueService = queueService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
-        
+
         controller.request.method = "POST"
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
@@ -623,7 +623,7 @@ class QueueControllerTests extends GroovyTestCase {
 
         controller.viewMessage()
         assert controller.response.status == 200
-        assert controller.response.contentAsString =~ /.*messageDetails.*TestQueue4.*QueueServiceTests.*message5.*/          
+        assert controller.response.contentAsString =~ /.*messageDetails.*TestQueue4.*QueueServiceTests.*message5.*/
     }
 
   @Test
@@ -692,7 +692,7 @@ class QueueControllerTests extends GroovyTestCase {
 
         def message = new Message([creator: "it-msgsvcadm", apiVersion: 1,createProg: "QueueServiceTests",messageData:[data: "message5"],messageContainer:new MessageContainer([type:"queue",id:queue.id,name:queue.name])])
         message.save(flush:true)
-        
+
         def controller = new QueueController()
         controller.queueService = queueService
         controller.springSecurityService = stubSpringSecurityService
@@ -700,7 +700,7 @@ class QueueControllerTests extends GroovyTestCase {
 
         controller.request.method = "GET"
         controller.params.name = "TestQueue4"
-        controller.params.id = message.id as String 
+        controller.params.id = message.id as String
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
 
@@ -727,10 +727,10 @@ class QueueControllerTests extends GroovyTestCase {
         controller.params.message = '{"status":"in-progress"}'
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
-        
+
         controller.modifyMessage()
         assert controller.response.status == 200
-        assert controller.response.contentAsString =~ /.*messageDetails.*TestQueue6.*in-progress.*/    
+        assert controller.response.contentAsString =~ /.*messageDetails.*TestQueue6.*in-progress.*/
     }
 
  @Test
@@ -751,10 +751,10 @@ class QueueControllerTests extends GroovyTestCase {
         controller.params.message = '{"createProg":"controllerTestChanged","messageData":{"name":"messageChanged"}}'
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
-        
+
         controller.modifyMessage()
         assert controller.response.status == 400
-        assert controller.response.contentAsString == '{"error":"Message status is a required parameter"}'         
+        assert controller.response.contentAsString == '{"error":"Message status is a required parameter"}'
     }
 
  @Test
@@ -775,10 +775,10 @@ class QueueControllerTests extends GroovyTestCase {
         controller.params.message = '{"createProg":"controllerTestChanged","status":"in-progress","messageData":{"name":"messageChanged"}}'
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
-        
+
         controller.modifyMessage()
         assert controller.response.status == 400
-        assert controller.response.contentAsString == '{"error":"Message status is the only modifiable data in a message"}'         
+        assert controller.response.contentAsString == '{"error":"Message status is the only modifiable data in a message"}'
     }
 
   @Test
@@ -793,7 +793,7 @@ class QueueControllerTests extends GroovyTestCase {
         controller.request.content = '{"status":"in-progress"}'
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
-        
+
         controller.modifyMessage()
         assert controller.response.status == 404
         assert controller.response.contentAsString == '{"error":"Message does not exist"}'
@@ -812,14 +812,14 @@ class QueueControllerTests extends GroovyTestCase {
         controller.params.name = "TestQueue6"
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
-        
+
         controller.params.id = message.id as String
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
-        
+
         controller.modifyMessage()
         assert controller.response.status == 400
-        assert controller.response.contentAsString == '{"error":"Message data required"}'         
+        assert controller.response.contentAsString == '{"error":"Message data required"}'
     }
 
   @Test
@@ -840,10 +840,10 @@ class QueueControllerTests extends GroovyTestCase {
         controller.request.content = '{"status""in-progress"}'
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
-        
+
         controller.modifyMessage()
         assert controller.response.status == 400
-        assert controller.response.contentAsString == '{"error":"Message data is invalid"}'         
+        assert controller.response.contentAsString == '{"error":"Message data is invalid"}'
     }
 
   @Test
@@ -864,7 +864,7 @@ class QueueControllerTests extends GroovyTestCase {
         controller.request.content = '{"createProg":"testProg","messageData":{"netid":"epierce"}}'
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
-        
+
         controller.modifyMessage()
         assert controller.response.status == 403
         assert controller.response.contentAsString == '{"error":"You are not authorized to perform this operation"}'
@@ -879,7 +879,7 @@ class QueueControllerTests extends GroovyTestCase {
         message.save(flush:true)
 
         def controller = new QueueController()
-        controller.queueService = queueService  
+        controller.queueService = queueService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
 
@@ -888,10 +888,10 @@ class QueueControllerTests extends GroovyTestCase {
         controller.request.content = '{"status":"in-progress"}'
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
-        
+
         controller.modifyMessage()
         assert controller.response.status == 400
-        assert controller.response.contentAsString == '{"error":"Requested message does not belong to requested queue"}'         
+        assert controller.response.contentAsString == '{"error":"Requested message does not belong to requested queue"}'
     }
 
   @Test
@@ -912,10 +912,10 @@ class QueueControllerTests extends GroovyTestCase {
         controller.request.content = '{"createProg":"testProg","messageData":{"netid":"epierce"}}'
         controller.request.contentType = "text/json"
         controller.request.addHeader("Accept", "text/json")
-        
+
         controller.modifyMessage()
         assert controller.response.status == 404
-        assert controller.response.contentAsString == '{"error":"Queue does not exist"}'       
+        assert controller.response.contentAsString == '{"error":"Queue does not exist"}'
     }
 
  @Test
@@ -930,7 +930,7 @@ class QueueControllerTests extends GroovyTestCase {
         controller.queueService = queueService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("it-msgsvcadm")
-        
+
         controller.request.method = "DELETE"
         controller.params.name = "TestQueue9"
         controller.params.id = message.id as String
@@ -939,7 +939,7 @@ class QueueControllerTests extends GroovyTestCase {
 
         controller.deleteMessage()
         assert controller.response.status == 200
-        assert controller.response.contentAsString =~ /.*messageDetails.*TestQueue9.*QueueServiceTests.*message1.*/          
+        assert controller.response.contentAsString =~ /.*messageDetails.*TestQueue9.*QueueServiceTests.*message1.*/
     }
 
  @Test
@@ -954,7 +954,7 @@ class QueueControllerTests extends GroovyTestCase {
         controller.queueService = queueService
         controller.springSecurityService = stubSpringSecurityService
         controller.springSecurityService.setUser("test-user")
-        
+
         controller.request.method = "DELETE"
         controller.params.name = "TestQueue9"
         controller.params.id = message.id as String
@@ -963,7 +963,7 @@ class QueueControllerTests extends GroovyTestCase {
 
         controller.deleteMessage()
         assert controller.response.status == 403
-        assert controller.response.contentAsString == '{"error":"You are not authorized to perform this operation"}'        
+        assert controller.response.contentAsString == '{"error":"You are not authorized to perform this operation"}'
     }
 
   @Test
@@ -1000,5 +1000,5 @@ class QueueControllerTests extends GroovyTestCase {
         controller.deleteMessage()
         assert controller.response.status == 404
         assert controller.response.contentAsString == '{"error":"Queue does not exist"}'
-    }    
+    }
 }

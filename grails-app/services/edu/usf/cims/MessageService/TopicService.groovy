@@ -24,7 +24,7 @@ class TopicService {
             return Topic.list()*.render()
         }
     }
-    
+
     def addTopic(String username, Map message) {
         if((message.messageData)?(message.messageData.name):false) {
             def topic = new Topic([name: message.messageData.name])
@@ -59,13 +59,13 @@ class TopicService {
         } else {
             log.error("No message data was given")
             return null
-        }        
+        }
     }
 
     def modifyTopic(String username, String topicName, Map message) {
         if(message.messageData.name) {
             def topic = Topic.findByName(topicName)
-                       
+
             if(topic) {
 
                 //Check authN
@@ -80,7 +80,7 @@ class TopicService {
                     def results = Message.collection.updateMulti([ "messageContainer.id" : topic.id],[$set: [ "messageContainer.name" : topic.name] ])
                     log.info("Updated topic ${topic.name} and ${results.n} messages")
                     return topic.render()
-                }                                
+                }
             } else {
                 log.warn("Invalid topic ( ${topicName} ) was given")
                 return "TopicNotFound"
@@ -89,7 +89,7 @@ class TopicService {
         } else {
             log.error("No message data was given")
             return null
-        }        
+        }
     }
 
     def deleteTopic(String username, String topicName) {
@@ -108,7 +108,7 @@ class TopicService {
         } else {
             log.warn("Invalid topic ( ${topicName} ) was given")
             return "TopicNotFound"
-        }       
+        }
     }
 
     def modifyPermissions(String username, String topicName, Map message){
@@ -170,18 +170,18 @@ class TopicService {
                 return "UpdateFailed"
             } else {
                 return result
-            }       
+            }
         } else {
             log.warn("Invalid topic ( ${topicName} ) was given")
             return "TopicNotFound"
-        }       
+        }
     }
 
 
 
 
     /**
-    
+
     * Methods dealing with Messages
 
     **/
@@ -213,7 +213,7 @@ class TopicService {
         } else {
             log.warn("Invalid topic ( ${topicName} ) was given")
             return "TopicNotFound"
-        }               
+        }
     }
 
     def createTopicMessage(String username, String topicName, Map message) {
@@ -231,11 +231,11 @@ class TopicService {
             //Create the new message
             def topicMessage = new Message(creator: username, apiVersion: message.apiVersion, createProg: message.createProg, messageData: message.messageData as LinkedHashMap)
             topicMessage.messageContainer = [type: "topic", id: topic.id, name: topic.name]
-       
+
             if(topicMessage.save(flush:true)){
-                
+
                 log.info("Added new message ${topicMessage.id as String} to topic ${topicName} for ${username}")
-                
+
                 return topicMessage.render()
             }  else {
                 log.error("Creating new message for topic ${topicName} failed! Message: ${message}")
@@ -243,16 +243,16 @@ class TopicService {
             }
         } else {
             log.warn("Invalid topic ( ${topicName} ) was given")
-            return "TopicNotFound"           
+            return "TopicNotFound"
         }
     }
-    
+
     def viewMessage(String username, String topicName, String messageId) {
         def topic = Topic.findByName(topicName)
         if (topic) {
 
             //Check authN
-            if (! topic.canRead(username)) return "NotAuthorized"                    
+            if (! topic.canRead(username)) return "NotAuthorized"
 
             def topicMessage = Message.findById(messageId)
             if (!topicMessage) {
@@ -274,13 +274,13 @@ class TopicService {
 
     def deleteMessage(String username, String topicName, String messageId) {
         def topic = Topic.findByName(topicName)
-        if (topic) {            
+        if (topic) {
 
             //Check authN
-            if (! topic.canWrite(username)) return "NotAuthorized"   
+            if (! topic.canWrite(username)) return "NotAuthorized"
 
             def topicMessage = Message.findById(messageId)
-            if (!topicMessage) {          
+            if (!topicMessage) {
                 log.error("MessageID ( ${messageId} ) not found")
                 return "MessageNotFound"
             }
@@ -291,11 +291,11 @@ class TopicService {
             }
 
             def topicMessageHash = topicMessage.render()
-            
+
             topicMessage.delete()
 
             log.warn("Message ${messageId} deleted")
-            return topicMessageHash    
+            return topicMessageHash
         } else {
             log.warn("Invalid topic ( ${topicName} ) was given")
             return "TopicNotFound"

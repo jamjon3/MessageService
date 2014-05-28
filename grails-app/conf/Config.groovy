@@ -85,74 +85,84 @@ log4j = { root ->
           'org.codehaus.groovy.grails.orm.hibernate', // hibernate integration
           'org.springframework',
           'groovyx.net.http.ParserRegistry'
-    
+
     info 'grails.app'
 
     debug 'edu.usf'
 
-    root.level = org.apache.log4j.Level.INFO
+    root.level = org.apache.log4j.Level.DEBUG
 }
 /////////////////////////////////////////////////////////////////////////////
 
 environments {
     development {
- 
+
     }
     test {
-      grails.plugins.springsecurity.active = false                  
+      grails.plugin.springsecurity.active = false
     }
     production {
-         
+
     }
 }
 
-grails.plugins.springsecurity.userLookup.userDomainClassName = 'edu.usf.cims.UsfCasUser'
-grails.plugins.springsecurity.securityConfigType = "Annotation"
-grails.plugins.springsecurity.sessionFixationPrevention.alwaysCreateSession = true
-grails.plugins.springsecurity.requestCache.createSession = true
+grails.plugin.springsecurity.userLookup.userDomainClassName = 'edu.usf.cims.UsfCasUser'
+grails.plugin.springsecurity.securityConfigType = "Annotation"
+grails.plugin.springsecurity.sessionFixationPrevention.alwaysCreateSession = true
+grails.plugin.springsecurity.requestCache.createSession = true
 
-grails.plugins.springsecurity.cas.active = true
-grails.plugins.springsecurity.cas.sendRenew = false
-grails.plugins.springsecurity.cas.key = '2c5b4d75940033d70035f0b10d1b8e65' //unique value for each app
-grails.plugins.springsecurity.cas.artifactParameter = 'ticket'
-grails.plugins.springsecurity.cas.serviceParameter = 'service'
-grails.plugins.springsecurity.cas.filterProcessesUrl = '/j_spring_cas_security_check'
-grails.plugins.springsecurity.cas.proxyReceptorUrl = '/secure/receptor'
-grails.plugins.springsecurity.cas.useSingleSignout = false
-grails.plugins.springsecurity.cas.driftTolerance = 120000
-grails.plugins.springsecurity.cas.loginUri = '/login'
-grails.plugins.springsecurity.cas.useSamlValidator = true
-grails.plugins.springsecurity.cas.authorityAttribute = 'eduPersonEntitlement'
+grails.plugin.springsecurity.ldap.context.managerDn = ''
+grails.plugin.springsecurity.ldap.context.managerPassword = ''
+grails.plugin.springsecurity.ldap.context.server = ''
+grails.plugin.springsecurity.ldap.search.base = ''
 
-//Update these for your environment
-grails.plugins.springsecurity.cas.serverUrlPrefix = 'https://authtest.it.usf.edu'
-grails.plugins.springsecurity.cas.serviceUrl = 'http://localhost:8080/MessageService/j_spring_cas_security_check'
-grails.plugins.springsecurity.cas.proxyCallbackUrl = 'http://localhost:8080/MessageService/secure/receptor'        
-grails.plugins.springsecurity.ldap.context.managerDn = ''
-grails.plugins.springsecurity.ldap.context.managerPassword = ''
-grails.plugins.springsecurity.ldap.context.server = ''
-grails.plugins.springsecurity.ldap.search.base = ''
+grails.plugin.springsecurity.ldap.useRememberMe = false
+grails.plugin.springsecurity.ldap.auth.hideUserNotFoundExceptions = true
 
-grails.plugins.springsecurity.ldap.useRememberMe = false
-grails.plugins.springsecurity.ldap.auth.hideUserNotFoundExceptions = true
+grails.plugin.springsecurity.ldap.search.filter="uid={0}"
+grails.plugin.springsecurity.ldap.search.searchSubtree = true
 
-grails.plugins.springsecurity.ldap.search.filter="uid={0}"
-grails.plugins.springsecurity.ldap.search.searchSubtree = true
+grails.plugin.springsecurity.ldap.authorities.ignorePartialResultException = false
+grails.plugin.springsecurity.ldap.authorities.prefix = 'ROLE_'
+grails.plugin.springsecurity.ldap.authorities.retrieveGroupRoles = false
 
-grails.plugins.springsecurity.ldap.authorities.ignorePartialResultException = false
-grails.plugins.springsecurity.ldap.authorities.prefix = 'ROLE_'
-grails.plugins.springsecurity.ldap.authorities.retrieveGroupRoles = false
+grails.plugin.springsecurity.ldap.mapper.userDetailsClass = 'inetOrgPerson'
+grails.plugin.springsecurity.ldap.mapper.convertToUpperCase = true
 
-grails.plugins.springsecurity.ldap.mapper.userDetailsClass = 'inetOrgPerson'
-grails.plugins.springsecurity.ldap.mapper.convertToUpperCase = true
+grails.plugin.springsecurity.useBasicAuth    = true
+grails.plugin.springsecurity.basic.realmName = "Message Service REST API"
 
-grails.plugins.springsecurity.useBasicAuth = true
-grails.plugins.springsecurity.basic.realmName = "Message Service REST API"
+grails.plugin.springsecurity.rest.login.endpointUrl                 = '/token/login'
+grails.plugin.springsecurity.rest.logout.endpointUrl                = '/token/logout'
+grails.plugin.springsecurity.rest.login.useRequestParamsCredentials = false
+grails.plugin.springsecurity.rest.login.useJsonCredentials          = true
+grails.plugin.springsecurity.rest.login.usernamePropertyName        = 'username'
+grails.plugin.springsecurity.rest.login.passwordPropertyName        = 'password'
+
+grails.plugin.springsecurity.rest.token.generation.useSecureRandom = true
+grails.plugin.springsecurity.rest.token.validation.headerName      = 'X-Auth-Token'
+grails.plugin.springsecurity.rest.token.validation.endpointUrl     = '/token/validate'
+
+grails.plugin.springsecurity.rest.token.storage.useMemcached         = true
+grails.plugin.springsecurity.rest.token.storage.memcached.hosts      = 'localhost:11211'
+grails.plugin.springsecurity.rest.token.storage.memcached.username   = ''
+grails.plugin.springsecurity.rest.token.storage.memcached.password   = ''
+grails.plugin.springsecurity.rest.token.storage.memcached.expiration = 3600
 
 /*
   Enable HTTP-BASIC for /basic/* URLs and CAS everything else
-*/  
-grails.plugins.springsecurity.filterChain.chainMap = [
-  '/basic/**': 'JOINED_FILTERS,-casAuthenticationFilter,-exceptionTranslationFilter',
-  '/**': 'JOINED_FILTERS,-basicAuthenticationFilter,-basicExceptionTranslationFilter'
+*/
+grails.plugin.springsecurity.filterChain.chainMap = [
+  '/basic/**': 'JOINED_FILTERS,-restAuthenticationFilter,-restTokenValidationFilter,-restLogoutFilter,-exceptionTranslationFilter',
+  '/token/**': 'JOINED_FILTERS,-basicAuthenticationFilter,-basicExceptionTranslationFilter'
 ]
+
+grails.plugin.springsecurity.controllerAnnotations.staticRules = [
+   '/':               ['permitAll'],
+   '/index':          ['permitAll'],
+   '/index.gsp':      ['permitAll'],
+   '/**/favicon.ico': ['permitAll'],
+]
+
+audit.enabled = true
+audit.target = "log4j"  // valid: mongodb or log4j

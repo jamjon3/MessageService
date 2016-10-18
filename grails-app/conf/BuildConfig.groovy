@@ -21,6 +21,7 @@ grails.project.dependency.resolution = {
         mavenCentral()
         mavenRepo 'http://repo.spring.io/milestone'
         mavenRepo 'https://oss.sonatype.org/content/repositories/snapshots'
+        mavenRepo "http://repo.grails.org/grails/repo/"
    }
     dependencies {
       compile 'commons-lang:commons-lang:2.5'

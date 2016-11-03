@@ -1,0 +1,27 @@
+---
+- hosts: all
+  vars_files:
+    - ./vars/usf.yml
+    - ./vars/vault.yml
+    - ./vars/main.yml
+  tasks:
+    - name: Build the MessageService WAR
+      shell: "{{ item }}"
+      args:
+        chdir: ../
+      with_items:
+        - "grails upgrade --force"
+        - "grails clean"
+        - "grails war"
+      tags:
+        - build        
+    - name: Test the MessageService App
+      shell: "{{ item }}"
+      args:
+        chdir: ../
+      with_items:
+        - "grails upgrade --force"
+        - "grails clean"
+        - "grails test-app"        
+      tags:
+        - test        

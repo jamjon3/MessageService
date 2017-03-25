@@ -19,5 +19,10 @@ node {
   stage('Build') {
       // Run the maven build
       sh "ansible-playbook -i 'localhost,' -c local --vault-password-file=${env.USF_ANSIBLE_VAULT_KEY} ansible/main.yml --extra-vars 'java_home=${env.JAVA_HOME}' -t 'build'"
+      dir('target') {
+         archiveArtifacts artifacts: 'MessageService.war'
+         // stash name: "messageservicerpm", includes: "MessageService*.rpm"
+      }
+
   }
 }
